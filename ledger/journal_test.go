@@ -32,7 +32,9 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: "assets:Cash:Checking",
+						AccountName: &AccountName{
+							Segments: []string{"assets", "Cash", "Checking"},
+						},
 					},
 				},
 			})
@@ -42,7 +44,9 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: "assets:Cash:Che cking:Spe-ci_al",
+						AccountName: &AccountName{
+							Segments: []string{"assets", "Cash", "Che cking", "Spe-ci_al"},
+						},
 					},
 				},
 			})
@@ -52,7 +56,9 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking  ; hehe\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: "assets:Cash:Checking",
+						AccountName: &AccountName{
+							Segments: []string{"assets", "Cash", "Checking"},
+						},
 						Comment: &InlineComment{
 							String: "hehe",
 						},
@@ -65,7 +71,7 @@ func TestJournalParser(t *testing.T) {
 			testParserFails(
 				t,
 				"account assets:Cash:Che  cking\n",
-				"testFile:1:25: unexpected token \" \" (expected <word>)",
+				"testFile:1:24: unexpected token \" \" (expected <newline>)",
 			)
 		})
 	})
@@ -178,10 +184,14 @@ payee Some Cool Person
 							String: "It includes many things",
 						},
 						&AccountDirective{
-							AccountName: "assets:Cash:Checking",
+							AccountName: &AccountName{
+								Segments: []string{"assets", "Cash", "Checking"},
+							},
 						},
 						&AccountDirective{
-							AccountName: "expenses:Gro ce:ries",
+							AccountName: &AccountName{
+								Segments: []string{"expenses", "Gro ce", "ries"},
+							},
 							Comment: &InlineComment{
 								String: "hehe",
 							},
