@@ -21,6 +21,12 @@ func TestJournalParser(t *testing.T) {
 		assert.EqualError(t, err, errorMessage)
 	}
 
+	t.Run("General format", func(t *testing.T) {
+		t.Run("Fails if a file does not end with a newline", func(t *testing.T) {
+			testParserFails(t, "; foo", "testFile:1:6: unexpected token \"<EOF>\" (expected <newline>)")
+		})
+	})
+
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking\n", &Journal{
@@ -46,8 +52,8 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking  ; hehe\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-                        AccountName: "assets:Cash:Checking",
-                        Comment: &InlineComment{
+						AccountName: "assets:Cash:Checking",
+						Comment: &InlineComment{
 							String: "hehe",
 						},
 					},
@@ -114,6 +120,29 @@ func TestJournalParser(t *testing.T) {
 				},
 			})
 		})
+
+		t.Run("Parses a file with indented comments", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`; Without indentation
+    ; with some indentation
+       # even more indentation
+`,
+				&Journal{
+					Entries: []Entry{
+						&Comment{
+							String: "Without indentation",
+						},
+						&Comment{
+							String: "with some indentation",
+						},
+						&Comment{
+							String: "even more indentation",
+						},
+					},
+				},
+			)
+		})
 	})
 
 	//	t.Run("Transaction", func(t *testing.T) {
@@ -149,10 +178,10 @@ payee Some Cool Person
 							String: "It includes many things",
 						},
 						&AccountDirective{
-                            AccountName: "assets:Cash:Checking",
+							AccountName: "assets:Cash:Checking",
 						},
 						&AccountDirective{
-                            AccountName: "expenses:Gro ce:ries",
+							AccountName: "expenses:Gro ce:ries",
 							Comment: &InlineComment{
 								String: "hehe",
 							},

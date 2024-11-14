@@ -6,14 +6,16 @@ import (
 )
 
 func MakeJournalLexer() *lexer.StatefulDefinition {
-	return lexer.MustSimple([]lexer.SimpleRule{
-		{Name: "Newline", Pattern: `\n`},
-	  {Name: "CommentIndicator", Pattern: `[;#]`},
-		{Name: "InlineCommentIndicator", Pattern: `  [;#] `},
-		{Name: "Whitespace", Pattern: ` `},
-		{Name: "AccountDirective", Pattern: `account`},
-		{Name: "PayeeDirective", Pattern: `payee`},
-		{Name: "Word", Pattern: `[^\s;#]+`},
+	return lexer.MustStateful(lexer.Rules{
+		"Root": {
+			{Name: "Newline", Pattern: `\n`, Action: nil},
+			{Name: "CommentIndicator", Pattern: `^\s*[;#]`, Action: nil},
+			{Name: "InlineCommentIndicator", Pattern: `  [;#] `, Action: nil},
+			{Name: "Whitespace", Pattern: ` `, Action: nil},
+			{Name: "AccountDirective", Pattern: `account`, Action: nil},
+			{Name: "PayeeDirective", Pattern: `payee`, Action: nil},
+			{Name: "Word", Pattern: `[^\s;#]+`, Action: nil},
+		},
 	})
 }
 
@@ -26,15 +28,15 @@ type Entry interface {
 }
 
 type AccountDirective struct {
-	AccountName string `parser:"AccountDirective ' ' @(Word (' ' Word)*)"`
-	Comment *InlineComment `parser:"(@@)? Newline"`
+	AccountName string         `parser:"AccountDirective ' ' @(Word (' ' Word)*)"`
+	Comment     *InlineComment `parser:"(@@)? Newline"`
 }
 
 func (*AccountDirective) value() {}
 
 type PayeeDirective struct {
-	PayeeName string `parser:"PayeeDirective ' ' @(Word (' ' Word)*)"`
-	Comment *InlineComment `parser:"(@@)? Newline"`
+	PayeeName string         `parser:"PayeeDirective ' ' @(Word (' ' Word)*)"`
+	Comment   *InlineComment `parser:"(@@)? Newline"`
 }
 
 func (*PayeeDirective) value() {}
