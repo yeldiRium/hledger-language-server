@@ -7,12 +7,12 @@
   "shell": {
     "scripts": {
       "make:diagrams": [
-        "mkdir -p parser/diagrams",
-        "go run cmd/parser-diagram/main.go | go run github.com/alecthomas/participle/v2/cmd/railroad > parser/diagrams/index.html"
+        "mkdir -p ledger/diagrams",
+        "go run cmd/parser-diagram/main.go | go run github.com/alecthomas/participle/v2/cmd/railroad > ledger/diagrams/index.html"
       ],
       "make:diagrams:assets": [
-        "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.js -O parser/diagrams/railroad-diagrams.js",
-        "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.css -O parser/diagrams/railroad-diagrams.css"
+        "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.js -O ledger/diagrams/railroad-diagrams.js",
+        "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.css -O ledger/diagrams/railroad-diagrams.css"
       ]
     }
   }

@@ -6,16 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParser(t *testing.T) {
+func TestJournalParser(t *testing.T) {
 	testParserWithFileContent := func(t *testing.T, testFileContent string, expectedValue interface{}) {
-		parser := MakeParser()
+		parser := MakeJournalParser()
 		value, err := parser.ParseString("testFile", testFileContent)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, value)
 	}
 	testParserFails := func(t *testing.T, testFileContent string, errorMessage string) {
-		parser := MakeParser()
+		parser := MakeJournalParser()
 		_, err := parser.ParseString("testFile", testFileContent)
 
 		assert.EqualError(t, err, errorMessage)
@@ -26,19 +26,7 @@ func TestParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: &AccountName{
-							Segments: []*AccountNameSegment{
-								{
-									String: "assets",
-								},
-								{
-									String: "Cash",
-								},
-								{
-									String: "Checking",
-								},
-							},
-						},
+						AccountName: "assets:Cash:Checking",
 					},
 				},
 			})
@@ -48,22 +36,7 @@ func TestParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: &AccountName{
-							Segments: []*AccountNameSegment{
-								{
-									String: "assets",
-								},
-								{
-									String: "Cash",
-								},
-								{
-									String: "Che cking",
-								},
-								{
-									String: "Spe-ci_al",
-								},
-							},
-						},
+						AccountName: "assets:Cash:Che cking:Spe-ci_al",
 					},
 				},
 			})
@@ -73,20 +46,8 @@ func TestParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking  ; hehe\n", &Journal{
 				Entries: []Entry{
 					&AccountDirective{
-						AccountName: &AccountName{
-							Segments: []*AccountNameSegment{
-								{
-									String: "assets",
-								},
-								{
-									String: "Cash",
-								},
-								{
-									String: "Checking",
-								},
-							},
-						},
-						Comment: &InlineComment{
+                        AccountName: "assets:Cash:Checking",
+                        Comment: &InlineComment{
 							String: "hehe",
 						},
 					},
@@ -98,7 +59,7 @@ func TestParser(t *testing.T) {
 			testParserFails(
 				t,
 				"account assets:Cash:Che  cking\n",
-				"testFile:1:24: unexpected token \"  \" (expected <eol>)",
+				"testFile:1:25: unexpected token \" \" (expected <word>)",
 			)
 		})
 	})
@@ -111,9 +72,21 @@ func TestParser(t *testing.T) {
 				&Journal{
 					Entries: []Entry{
 						&PayeeDirective{
-							PayeeName: &PayeeName{
-								String: "Some Cool Person",
-							},
+							PayeeName: "Some Cool Person",
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parse a file containing a payee directive including special chars", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				"payee So:me\n",
+				&Journal{
+					Entries: []Entry{
+						&PayeeDirective{
+							PayeeName: "So:me",
 						},
 					},
 				},
@@ -143,6 +116,19 @@ func TestParser(t *testing.T) {
 		})
 	})
 
+	//	t.Run("Transaction", func(t *testing.T) {
+	//		t.Run("Parses a simple transaction with two postings including all values.", func(t *testing.T) {
+	//			testParserWithFileContent(
+	//				t,
+	//				`2020-01-01 Payee | transaction reason
+	//    expenses:Groceries  15.23 €
+	//    assets:Cash:Checking  -15.23 €
+	//`,
+	//				&Journal{},
+	//			)
+	//		})
+	//	})
+
 	t.Run("Mixed", func(t *testing.T) {
 		t.Run("Parses a journal file containing many different directives, postings and comments", func(t *testing.T) {
 			testParserWithFileContent(
@@ -163,30 +149,16 @@ payee Some Cool Person
 							String: "It includes many things",
 						},
 						&AccountDirective{
-							AccountName: &AccountName{
-								Segments: []*AccountNameSegment{
-									{String: "assets"},
-									{String: "Cash"},
-									{String: "Checking"},
-								},
-							},
+                            AccountName: "assets:Cash:Checking",
 						},
 						&AccountDirective{
-							AccountName: &AccountName{
-								Segments: []*AccountNameSegment{
-									{String: "expenses"},
-									{String: "Gro ce"},
-									{String: "ries"},
-								},
-							},
+                            AccountName: "expenses:Gro ce:ries",
 							Comment: &InlineComment{
 								String: "hehe",
 							},
 						},
 						&PayeeDirective{
-							PayeeName: &PayeeName{
-								String: "Some Cool Person",
-							},
+							PayeeName: "Some Cool Person",
 						},
 					},
 				},

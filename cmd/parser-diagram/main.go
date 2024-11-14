@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/yeldiRium/hledger-language-server/parser"
+	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func main() {
-	parser := parser.MakeParser()
+	parser := parser.MakeJournalParser()
 	fmt.Println(parser.String())
 }
