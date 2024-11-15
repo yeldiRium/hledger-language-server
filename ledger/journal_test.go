@@ -36,6 +36,10 @@ func TestJournalParser(t *testing.T) {
 	}
 
 	t.Run("General format", func(t *testing.T) {
+		t.Run("Parses a file containing only newlines.", func(t *testing.T) {
+			testParserWithFileContent(t, "\n\n\n", &Journal{})
+		})
+
 		t.Run("Fails if a file does not end with a newline", func(t *testing.T) {
 			testParserFails(t, "; foo", "testFile:1:6: unexpected token \"<EOF>\" (expected <newline>)")
 		})
