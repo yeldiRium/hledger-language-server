@@ -55,4 +55,64 @@ func TestLexer(t *testing.T) {
 			},
 		}, tokens)
 	})
+
+	t.Run("Account directive", func(t *testing.T) {
+		t.Run("Fails if the account directive does not contain an account name.", func(t *testing.T) {
+			_, err := runLexer(t, "account \n")
+			assert.Error(t, err, "foobar")
+		})
+
+		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
+			tokens, err := runLexer(t, "account assets:Cash:Checking\n")
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				[]lexer.Token{
+					{Type: itemAccountDirective, Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
+					{Type: itemWhitespace, Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
+					{Type: itemAccountName, Value: "assets:Cash:Checking", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
+					{Type: itemNewline, Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 28, Line: 1, Column: 29}},
+				},
+				tokens,
+			)
+		})
+
+		t.Run("Parses a file containing an account directive with special characters and whitespace", func(t *testing.T) {
+			tokens, err := runLexer(t, "account assets:Cash:Che cking:Spe-ci_al\n")
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				[]lexer.Token{
+					{Type: itemAccountDirective, Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
+					{Type: itemWhitespace, Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
+					{Type: itemAccountName, Value: "assets:Cash:Che cking:Spe-ci_al", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
+					{Type: itemNewline, Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 39, Line: 1, Column: 40}},
+				},
+				tokens,
+			)
+		})
+
+		//t.Run("Parses a file containing an account directive followed by an inline comment", func(t *testing.T) {
+		//	testParserWithFileContent(t, "account assets:Cash:Checking  ; hehe\n", &Journal{
+		//		Entries: []Entry{
+		//			&AccountDirective{
+		//				AccountName: &AccountName{
+		//					Segments: []string{"assets", "Cash", "Checking"},
+		//				},
+		//				Comment: &InlineComment{
+		//					String: "hehe",
+		//				},
+		//			},
+		//		},
+		//	})
+		//})
+
+		//t.Run("Fails on more than one consecutive space within an account name", func(t *testing.T) {
+		//	testParserFails(
+		//		t,
+		//		"account assets:Cash:Che  cking\n",
+		//		"testFile:1:24: unexpected token \" \" (expected <newline>)",
+		//	)
+		//})
+	})
 }

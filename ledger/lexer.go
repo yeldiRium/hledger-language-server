@@ -1,6 +1,8 @@
 package ledger
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"unicode/utf8"
@@ -13,6 +15,9 @@ const (
 	itemError lexer.TokenType = iota
 	itemEOF
 	itemNewline
+	itemWhitespace
+	itemAccountDirective
+	itemAccountName
 )
 
 type journalLexerDefinition struct{}
@@ -48,13 +53,13 @@ func (j *journalLexerDefinition) Symbols() map[string]lexer.TokenType {
 	}
 }
 
-type backupFn func() lexer.Position
+type backupFn func()
 type journalLexer struct {
-	name     string           // used only for error reports
-	input    string           // the string being lexed
-	start    lexer.Position   // start of the current token
-	pos      lexer.Position   // current position in the input
-	tokens   chan lexer.Token // channel of lexed tokens
+	name   string           // used only for error reports
+	input  string           // the string being lexed
+	start  lexer.Position   // start of the current token
+	pos    lexer.Position   // current position in the input
+	tokens chan lexer.Token // channel of lexed tokens
 }
 
 func (l *journalLexer) run() {
@@ -71,6 +76,11 @@ func (l *journalLexer) Next() (lexer.Token, error) {
 			Type: lexer.EOF,
 		}, nil
 	}
+
+	if token.Type == itemError {
+		return token, errors.New(token.Value)
+	}
+
 	return token, nil
 }
 
@@ -84,7 +94,7 @@ func (l *journalLexer) emit(t lexer.TokenType) {
 }
 
 func (l *journalLexer) next() (rune, backupFn) {
-    backup := l.makeBackup()
+	backup := l.makeBackup()
 
 	if l.pos.Offset >= len(l.input) {
 		return eof, backup
@@ -98,9 +108,9 @@ func (l *journalLexer) next() (rune, backupFn) {
 }
 
 func (l *journalLexer) makeBackup() backupFn {
-	return func() lexer.Position {
-		backupPos := l.pos
-		return backupPos
+	backupPos := l.pos
+	return func() {
+		l.pos = backupPos
 	}
 }
 
@@ -115,37 +125,85 @@ func (l *journalLexer) peek() rune {
 }
 
 func (l *journalLexer) accept(valid string) (bool, backupFn) {
-    rune, backup := l.next()
+	rune, backup := l.next()
 	if strings.IndexRune(valid, rune) != -1 {
 		return true, backup
 	}
-    backup()
+	backup()
 	return false, backup
 }
 
+func (l *journalLexer) acceptRun(valid string) backupFn {
+	backup := l.makeBackup()
+	for {
+		rune, backupOnce := l.next()
+		if strings.IndexRune(valid, rune) == -1 {
+			backupOnce()
+			break
+		}
+	}
+	return backup
+}
+
 func (l *journalLexer) acceptString(valid string) (bool, backupFn) {
-    backup := l.makeBackup()
+	backup := l.makeBackup()
 	for _, r := range valid {
-        if ok, _ := l.accept(string(r)); !ok {
-            backup()
+		if ok, _ := l.accept(string(r)); !ok {
+			backup()
 			return false, backup
 		}
 	}
 	return true, backup
 }
 
-type stateFn func(*journalLexer) stateFn
+func (l *journalLexer) acceptUntil(invalid string) backupFn {
+	backup := l.makeBackup()
+	for {
+		rune, backupOnce := l.next()
+		if strings.IndexRune(invalid, rune) != -1 {
+			backupOnce()
+			break
+		}
+	}
+	return backup
+}
 
-func lexRoot(l *journalLexer) stateFn {
-    if ok, _ := l.accept("\n"); ok {
-		l.emit(itemNewline)
-		return lexRoot
+func (l *journalLexer) errorf(format string, args ...interface{}) stateFn {
+	l.tokens <- lexer.Token{
+		Type:  itemError,
+		Value: fmt.Sprintf(format, args...),
+		Pos:   l.start,
 	}
 	return nil
 }
 
-func lexAccountDirective(l *journalLexer) stateFn {
+type stateFn func(*journalLexer) stateFn
+
+func lexRoot(l *journalLexer) stateFn {
+	if ok, _ := l.accept("\n"); ok {
+		l.emit(itemNewline)
+		return lexRoot
+	}
+	if ok, _ := l.acceptString("account"); ok {
+		l.emit(itemAccountDirective)
+		l.acceptRun(" ")
+		l.emit(itemWhitespace)
+		return lexAccountDirective
+	}
+
 	return nil
+}
+
+func lexAccountDirective(l *journalLexer) stateFn {
+	l.acceptUntil("\n")
+	if l.pos.Offset == l.start.Offset {
+		l.errorf("expected account name in account directive, but found nothing")
+	}
+	// TODO: parse account name segments
+	l.emit(itemAccountName)
+	l.accept("\n")
+	l.emit(itemNewline)
+	return lexRoot
 }
 
 func MakeLexer() *journalLexerDefinition {
