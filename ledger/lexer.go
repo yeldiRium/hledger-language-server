@@ -140,6 +140,6 @@ func lexRoot(l *journalLexer) stateFn {
 	return nil
 }
 
-func MakeLexer() lexer.StringDefinition {
+func MakeLexer() *journalLexerDefinition {
 	return &journalLexerDefinition{}
 }
