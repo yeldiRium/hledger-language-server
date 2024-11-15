@@ -1,6 +1,7 @@
-package journal
+package ledger
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -21,6 +22,9 @@ func TestLexer(t *testing.T) {
 			}
 			tokens = append(tokens, token)
 		}
+
+		fmt.Printf("tokens: %#v\n", tokens)
+
 		return tokens, nil
 	}
 	runLexer := func(t *testing.T, input string) ([]lexer.Token, error) {
