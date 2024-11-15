@@ -1,16 +1,19 @@
-package parser
+package journal
 
 import (
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
 )
 
+// Caveats of this implementation:
+// - Postings need to be indented by at least two spaces, since I can't get the parser to work otherwise.
 func MakeJournalLexer() *lexer.StatefulDefinition {
 	return lexer.MustStateful(lexer.Rules{
 		"Root": {
 			{Name: "Newline", Pattern: `\n`, Action: nil},
 			{Name: "CommentIndicator", Pattern: `^\s*[;#]`, Action: nil},
 			{Name: "InlineCommentIndicator", Pattern: `  [;#] `, Action: nil},
+			{Name: "PostingIndent", Pattern: `  +`, Action: lexer.Push("Posting")},
 			{Name: "Whitespace", Pattern: ` `, Action: nil},
 			{Name: "AccountDirective", Pattern: `account`, Action: lexer.Push("AccountName")},
 			{Name: "PayeeDirective", Pattern: `payee`, Action: nil},
@@ -32,6 +35,10 @@ func MakeJournalLexer() *lexer.StatefulDefinition {
 			{Name: "PayeeSeparator", Pattern: `\|`, Action: nil},
 			{Name: "TransactionStatusIndicator", Pattern: `[!*]`, Action: nil},
 			{Name: "TransactionWord", Pattern: `[^\s;#()|!*]+`, Action: nil},
+		},
+		"Posting": {
+			lexer.Include("AccountName"),
+			{Name: "PostingAmount", Pattern: `([^\s]+ )?[+-]?[\d,.]+( \d,.]+)*( [^\s]+)`, Action: nil},
 		},
 	})
 }
@@ -69,9 +76,16 @@ type Transaction struct {
 	Payee       string         `parser:"(' ' @((TransactionWord|TransactionStatusIndicator|CodeParentheses) (' ' (TransactionWord|TransactionStatusIndicator|CodeParentheses))*) ' ' PayeeSeparator)?"`
 	Description string         `parser:"(' ' @((TransactionWord|TransactionStatusIndicator|CodeParentheses|PayeeSeparator) (' ' (TransactionWord|TransactionStatusIndicator|CodeParentheses|PayeeSeparator))*))?"`
 	Comment     *InlineComment `parser:"(@@)? Newline"`
+	Postings    []*Posting     `parser:"(@@)*"`
 }
 
 func (*Transaction) value() {}
+
+type Posting struct {
+	AccountName *AccountName   `parser:"PostingIndent @@"`
+	Amount      string         `parser:"('  '+ ' '* @PostingAmount)?"`
+	Comment     *InlineComment `parser:"(@@)? Newline"`
+}
 
 type InlineComment struct {
 	String string `parser:"InlineCommentIndicator @(Word (Whitespace+ Word)*)"`

@@ -1,15 +1,29 @@
-package parser
+package journal
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJournalParser(t *testing.T) {
 	testParserWithFileContent := func(t *testing.T, testFileContent string, expectedValue interface{}) {
+		lexer2 := MakeJournalLexer()
+		lex, err := lexer2.LexString("testFile", testFileContent)
+		tokens := make([]lexer.Token, 0)
+		token, err := lex.Next()
+		for err == nil && token.Type != lexer.EOF {
+			tokens = append(tokens, token)
+			token, err = lex.Next()
+		}
+		fmt.Printf("Tokens: %#v\n", tokens)
+
 		parser := MakeJournalParser()
 		value, err := parser.ParseString("testFile", testFileContent)
+
+		fmt.Printf("AST: %#v\n", value)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, value)
@@ -221,6 +235,7 @@ func TestJournalParser(t *testing.T) {
 				},
 			)
 		})
+
 		t.Run("Parses a cleared transaction.", func(t *testing.T) {
 			testParserWithFileContent(
 				t,
@@ -231,6 +246,88 @@ func TestJournalParser(t *testing.T) {
 						&Transaction{
 							Date:   "2020-01-01",
 							Status: "*",
+						},
+					},
+				},
+			)
+		})
+	})
+
+	t.Run("Posting", func(t *testing.T) {
+		t.Run("Parses a transaction with a minimal posting line.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2024-11-15
+    assets:Cash:Checking
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date: "2024-11-15",
+							Postings: []*Posting{
+								&Posting{
+									AccountName: &AccountName{
+										Segments: []string{"assets", "Cash", "Checking"},
+									},
+								},
+							},
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses a transaction with a full posting line.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2024-11-15
+    assets:Cash:Checking    -1,234.56 €
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date: "2024-11-15",
+							Postings: []*Posting{
+								&Posting{
+									AccountName: &AccountName{
+										Segments: []string{"assets", "Cash", "Checking"},
+									},
+									Amount: "-1,234.56 €",
+								},
+							},
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses a transaction with a posting line with an inline comment.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2024-11-15
+    assets:Cash:Checking   -1,234.56 €  ; inline comment
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date: "2024-11-15",
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses a transaction with multiple postings.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2024-11-15
+    expenses:Groceries      1,234.56 €
+    assets:Cash:Checking   -1,234.56 €  ; inline comment
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date: "2024-11-15",
 						},
 					},
 				},
