@@ -14,6 +14,7 @@ func MakeJournalLexer() *lexer.StatefulDefinition {
 			{Name: "Whitespace", Pattern: ` `, Action: nil},
 			{Name: "AccountDirective", Pattern: `account`, Action: lexer.Push("AccountName")},
 			{Name: "PayeeDirective", Pattern: `payee`, Action: nil},
+			{Name: "TransactionDate", Pattern: `(\d{4}[-/.])?[01]?\d[-/.][0123]?\d`, Action: lexer.Push("Transaction")},
 			{Name: "Word", Pattern: `[^\s;#]+`, Action: nil},
 		},
 		"AccountName": {
@@ -22,6 +23,15 @@ func MakeJournalLexer() *lexer.StatefulDefinition {
 			{Name: "Whitespace", Pattern: ` `, Action: nil},
 			{Name: "AccountNameSeparator", Pattern: `:`, Action: nil},
 			{Name: "AccountNameSegment", Pattern: `[^\s:;#]+( [^\s:;#]+)*`, Action: nil},
+		},
+		"Transaction": {
+			{Name: "Newline", Pattern: `\n`, Action: lexer.Pop()},
+			{Name: "InlineCommentIndicator", Pattern: `  [;#] `, Action: lexer.Pop()},
+			{Name: "Whitespace", Pattern: ` `, Action: nil},
+			{Name: "CodeParentheses", Pattern: `[()]`, Action: nil},
+			{Name: "PayeeSeparator", Pattern: `\|`, Action: nil},
+			{Name: "TransactionStatusIndicator", Pattern: `[!*]`, Action: nil},
+			{Name: "TransactionWord", Pattern: `[^\s;#()|!*]+`, Action: nil},
 		},
 	})
 }
@@ -52,6 +62,17 @@ type PayeeDirective struct {
 
 func (*PayeeDirective) value() {}
 
+type Transaction struct {
+	Date        string         `parser:"@TransactionDate"`
+	Status      string         `parser:"(' ' @TransactionStatusIndicator)?"`
+	Code        string         `parser:"(' ' '(' @TransactionWord ')')?"`
+	Payee       string         `parser:"(' ' @((TransactionWord|TransactionStatusIndicator|CodeParentheses) (' ' (TransactionWord|TransactionStatusIndicator|CodeParentheses))*) ' ' PayeeSeparator)?"`
+	Description string         `parser:"(' ' @((TransactionWord|TransactionStatusIndicator|CodeParentheses|PayeeSeparator) (' ' (TransactionWord|TransactionStatusIndicator|CodeParentheses|PayeeSeparator))*))?"`
+	Comment     *InlineComment `parser:"(@@)? Newline"`
+}
+
+func (*Transaction) value() {}
+
 type InlineComment struct {
 	String string `parser:"InlineCommentIndicator @(Word (Whitespace+ Word)*)"`
 }
@@ -67,7 +88,7 @@ func MakeJournalParser() *participle.Parser[Journal] {
 	parser, err := participle.Build[Journal](
 		participle.Lexer(lexer),
 		participle.UseLookahead(3),
-		participle.Union[Entry](&Comment{}, &AccountDirective{}, &PayeeDirective{}),
+		participle.Union[Entry](&Comment{}, &AccountDirective{}, &PayeeDirective{}, &Transaction{}),
 	)
 	if err != nil {
 		panic(err)

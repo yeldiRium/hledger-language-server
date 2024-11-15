@@ -151,18 +151,92 @@ func TestJournalParser(t *testing.T) {
 		})
 	})
 
-	//	t.Run("Transaction", func(t *testing.T) {
-	//		t.Run("Parses a simple transaction with two postings including all values.", func(t *testing.T) {
-	//			testParserWithFileContent(
-	//				t,
-	//				`2020-01-01 Payee | transaction reason
-	//    expenses:Groceries  15.23 €
-	//    assets:Cash:Checking  -15.23 €
-	//`,
-	//				&Journal{},
-	//			)
-	//		})
-	//	})
+	t.Run("Transaction", func(t *testing.T) {
+		t.Run("Parses a minimal transaction line.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2020-01-01
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date: "2020-01-01",
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses the most common kind of transaction line.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2020-01-01 Some Payee | transaction reason
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date:        "2020-01-01",
+							Payee:       "Some Payee",
+							Description: "transaction reason",
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses a full transaction line with all features.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2020-01-01 ! (code) Payee | transaction reason  ; inline comment
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date:        "2020-01-01",
+							Status:      "!",
+							Code:        "code",
+							Payee:       "Payee",
+							Description: "transaction reason",
+							Comment: &InlineComment{
+								String: "inline comment",
+							},
+						},
+					},
+				},
+			)
+		})
+
+		t.Run("Parses a pending transaction.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2020-01-01 !
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date:   "2020-01-01",
+							Status: "!",
+						},
+					},
+				},
+			)
+		})
+		t.Run("Parses a cleared transaction.", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`2020-01-01 *
+`,
+				&Journal{
+					Entries: []Entry{
+						&Transaction{
+							Date:   "2020-01-01",
+							Status: "*",
+						},
+					},
+				},
+			)
+		})
+	})
 
 	t.Run("Mixed", func(t *testing.T) {
 		t.Run("Parses a journal file containing many different directives, postings and comments", func(t *testing.T) {
