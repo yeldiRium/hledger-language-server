@@ -4,6 +4,9 @@
     "go@latest",
     "wget@latest"
   ],
+  "env": {
+    "NIX_HARDENING_ENABLE": ""
+  },
   "shell": {
     "scripts": {
       "make:diagrams": [
