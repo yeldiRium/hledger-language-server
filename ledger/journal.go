@@ -1,4 +1,4 @@
-package journal
+package ledger
 
 import (
 	"github.com/alecthomas/participle/v2"
