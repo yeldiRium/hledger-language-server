@@ -48,13 +48,13 @@ func (j *journalLexerDefinition) Symbols() map[string]lexer.TokenType {
 	}
 }
 
+type backupFn func() lexer.Position
 type journalLexer struct {
-	name     string                // used only for error reports
-	input    string                // the string being lexed
-	start    lexer.Position        // start of the current token
-	pos      lexer.Position        // current position in the input
-	tokens   chan lexer.Token      // channel of lexed tokens
-	backupFn func() lexer.Position // rewind position one step, if it is set
+	name     string           // used only for error reports
+	input    string           // the string being lexed
+	start    lexer.Position   // start of the current token
+	pos      lexer.Position   // current position in the input
+	tokens   chan lexer.Token // channel of lexed tokens
 }
 
 func (l *journalLexer) run() {
@@ -83,60 +83,68 @@ func (l *journalLexer) emit(t lexer.TokenType) {
 	l.start = l.pos
 }
 
-func (l *journalLexer) next() rune {
+func (l *journalLexer) next() (rune, backupFn) {
+    backup := l.makeBackup()
+
 	if l.pos.Offset >= len(l.input) {
-		return eof
+		return eof, backup
 	}
 
-    l.backupFn = func() lexer.Position {
-        backupPos := l.pos
-        return backupPos
-    }
-            
 	// TODO: handle potential encoding error
 	rune, _ := utf8.DecodeRuneInString(l.input[l.pos.Offset:])
 	l.pos.Advance(string(rune))
 
-	return rune
+	return rune, backup
 }
 
-// This can only be used once, since the backup function is dependent
-// on the previously executed action. Calling backup twice is idempotent.
-// Many functions change backup's behavior. E.g. it is not possible to
-// call `peek()` and then `backup()` afterwards, since peek writes and
-// uses backup.
-func (l *journalLexer) backup() {
-	if l.backupFn != nil {
-		l.pos = l.backupFn()
+func (l *journalLexer) makeBackup() backupFn {
+	return func() lexer.Position {
+		backupPos := l.pos
+		return backupPos
 	}
 }
 
 func (l *journalLexer) ignore() {
-    l.start = l.pos
+	l.start = l.pos
 }
 
 func (l *journalLexer) peek() rune {
-    rune := l.next()
-    l.backup()
-    return rune
+	rune, backup := l.next()
+	backup()
+	return rune
 }
 
-func (l *journalLexer) accept(valid string) bool {
-    if strings.IndexRune(valid, l.next()) != -1 {
-        return true
-    }
-    l.backup()
-    return false
+func (l *journalLexer) accept(valid string) (bool, backupFn) {
+    rune, backup := l.next()
+	if strings.IndexRune(valid, rune) != -1 {
+		return true, backup
+	}
+    backup()
+	return false, backup
 }
 
+func (l *journalLexer) acceptString(valid string) (bool, backupFn) {
+    backup := l.makeBackup()
+	for _, r := range valid {
+        if ok, _ := l.accept(string(r)); !ok {
+            backup()
+			return false, backup
+		}
+	}
+	return true, backup
+}
 
 type stateFn func(*journalLexer) stateFn
 
 func lexRoot(l *journalLexer) stateFn {
-    if l.accept("\n") {
-        l.emit(itemNewline)
-        return lexRoot
-    }
+    if ok, _ := l.accept("\n"); ok {
+		l.emit(itemNewline)
+		return lexRoot
+	}
+	return nil
+}
+
+func lexAccountDirective(l *journalLexer) stateFn {
 	return nil
 }
 
