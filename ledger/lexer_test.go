@@ -21,6 +21,53 @@ func TestLexer(t *testing.T) {
 	}
 
 	t.Run("journalLexer", func(t *testing.T) {
+		t.Run("accept", func(t *testing.T) {
+			t.Run("accepts a single character, returns true and advances the position", func(t *testing.T) {
+				filename := "testFile"
+				l := &journalLexer{
+					name:   filename,
+					input:  "test input",
+					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					tokens: make(chan lexer.Token),
+				}
+
+				ok, _ := l.accept("t")
+				assert.True(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
+			})
+
+			t.Run("returns false and stays at position if the next character does not match", func(t *testing.T) {
+				filename := "testFile"
+				l := &journalLexer{
+					name:   filename,
+					input:  "test input",
+					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					tokens: make(chan lexer.Token),
+				}
+
+				ok, _ := l.accept("x")
+				assert.False(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
+			})
+
+			t.Run("returns a backup function that rewinds the position to before the accept call", func(t *testing.T) {
+				filename := "testFile"
+				l := &journalLexer{
+					name:   filename,
+					input:  "test input",
+					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					tokens: make(chan lexer.Token),
+				}
+
+				_, backup := l.accept("t")
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
+				backup()
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
+			})
+		})
 	})
 
 	t.Run("LexString", func(t *testing.T) {
