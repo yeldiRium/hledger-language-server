@@ -20,7 +20,9 @@ const (
 	itemAccountName
 )
 
-type journalLexerDefinition struct{}
+type journalLexerDefinition struct{
+	initialState stateFn
+}
 
 func (j *journalLexerDefinition) LexString(filename string, input string) (lexer.Lexer, error) {
 	l := &journalLexer{
@@ -31,7 +33,7 @@ func (j *journalLexerDefinition) LexString(filename string, input string) (lexer
 		tokens: make(chan lexer.Token),
 	}
 
-	go l.run()
+	go l.run(j.initialState)
 
 	return l, nil
 }
@@ -50,6 +52,9 @@ func (j *journalLexerDefinition) Symbols() map[string]lexer.TokenType {
 		"Error": itemError,
 		"EOF":   itemEOF,
 		"EOL":   itemNewline,
+		"Whitespace": itemWhitespace,
+		"AccountDirective": itemAccountDirective,
+		"AccountName": itemAccountName, 
 	}
 }
 
@@ -62,8 +67,8 @@ type journalLexer struct {
 	tokens chan lexer.Token // channel of lexed tokens
 }
 
-func (l *journalLexer) run() {
-	for state := lexRoot; state != nil; {
+func (l *journalLexer) run(initialState stateFn) {
+	for state := initialState; state != nil; {
 		state = state(l)
 	}
 	close(l.tokens)
@@ -206,6 +211,8 @@ func lexAccountDirective(l *journalLexer) stateFn {
 	return lexRoot
 }
 
-func MakeLexer() *journalLexerDefinition {
-	return &journalLexerDefinition{}
+func MakeJournalLexer() *journalLexerDefinition {
+	return &journalLexerDefinition{
+		initialState: lexRoot,
+	}
 }

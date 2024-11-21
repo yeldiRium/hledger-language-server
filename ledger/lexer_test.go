@@ -10,7 +10,7 @@ import (
 
 func TestLexer(t *testing.T) {
 	runLexerWithFilename := func(t *testing.T, input, filename string) ([]lexer.Token, error) {
-		lexerDefinition := MakeLexer()
+		lexerDefinition := MakeJournalLexer()
 		l, err := lexerDefinition.LexString(filename, input)
 		if err != nil {
 			return nil, err
