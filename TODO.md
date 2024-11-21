@@ -3,7 +3,7 @@
 ## journal file parser
 - directives
     - [x] support account directive (`account`)
-    - [x] support payee directive (`payee`)
+    - [ ] support payee directive (`payee`)
     - [ ] support tag directive (`tag`)
     - [ ] support commodity directive (`commodity`)
     - [ ] support alias directive (`alias`)
@@ -13,8 +13,12 @@
     - [ ] support default commodity directive (`D`)
     - [ ] support default year directive (`Y`)
     - [ ] support prepend account directive (`apply account` and `end apply account`)
+- common types
+    - [ ] support parsing accounts into segments
+    - [ ] support parsing amounts including currency
+    - [ ] support parsing dates
 - transactions
-    - [x] support basic transaction lines
+    - [ ] support basic transaction lines
     - [ ] support recurring transactions (`~`)
     - [ ] support auto-posted transactions (`=`)
     - [ ] support inline comment tagged transactions
@@ -25,9 +29,9 @@
         - [ ] support assertions (`= ...`)
         - [ ] support inline comment tagged postings
 - comments
-    - [x] support comments starting with `;` or `#`
+    - [ ] support comments starting with `;` or `#`
     - [ ] support comments starting with `*`
-    - [x] support inline comments starting with `  ;` or `  #`
+    - [ ] support inline comments starting with `  ;` or `  #`
     - [ ] support block comments (`comment` and `end comment`)
     - [ ] support tags in inline comments
     - [ ] support indented additional comments
