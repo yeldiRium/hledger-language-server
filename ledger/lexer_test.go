@@ -20,11 +20,31 @@ func TestLexer(t *testing.T) {
 		return tokens, nil
 	}
 
-	t.Run("journalLexer", func(t *testing.T) {
+	t.Run("LexerDefinition", func(t *testing.T) {
+		t.Run("contains a default list of token types", func(t *testing.T) {
+			definition := MakeLexerDefinition(nil, []string{})
+			assert.Equal(t, map[string]lexer.TokenType{
+				"Error": itemError,
+				"EOF":   itemEOF,
+			}, definition.symbols)
+		})
+
+		t.Run("can be extended with custom token types that are automatically enumerated", func(t *testing.T) {
+			definition := MakeLexerDefinition(nil, []string{"foo", "bar"})
+			assert.Equal(t, map[string]lexer.TokenType{
+				"Error": itemError,
+				"EOF":   itemEOF,
+				"foo":   itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes + 1,
+				"bar":   itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes + 2,
+			}, definition.symbols)
+		})
+	})
+
+	t.Run("Lexer", func(t *testing.T) {
 		t.Run("accept", func(t *testing.T) {
 			t.Run("accepts a single character, returns true and advances the position", func(t *testing.T) {
 				filename := "testFile"
-				l := &journalLexer{
+				l := &Lexer{
 					name:   filename,
 					input:  "test input",
 					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
@@ -32,14 +52,14 @@ func TestLexer(t *testing.T) {
 					tokens: make(chan lexer.Token),
 				}
 
-				ok, _ := l.accept("t")
+				ok, _ := l.Accept("t")
 				assert.True(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
 			})
 
 			t.Run("returns false and stays at position if the next character does not match", func(t *testing.T) {
 				filename := "testFile"
-				l := &journalLexer{
+				l := &Lexer{
 					name:   filename,
 					input:  "test input",
 					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
@@ -47,14 +67,14 @@ func TestLexer(t *testing.T) {
 					tokens: make(chan lexer.Token),
 				}
 
-				ok, _ := l.accept("x")
+				ok, _ := l.Accept("x")
 				assert.False(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the accept call", func(t *testing.T) {
 				filename := "testFile"
-				l := &journalLexer{
+				l := &Lexer{
 					name:   filename,
 					input:  "test input",
 					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
@@ -62,7 +82,7 @@ func TestLexer(t *testing.T) {
 					tokens: make(chan lexer.Token),
 				}
 
-				_, backup := l.accept("t")
+				_, backup := l.Accept("t")
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
 				backup()
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
@@ -72,17 +92,17 @@ func TestLexer(t *testing.T) {
 
 	t.Run("LexString", func(t *testing.T) {
 		t.Run("LexString runs the lexer until the end of the input is reached", func(t *testing.T) {
-			var rootState stateFn
-			rootState = func(l *journalLexer) stateFn {
-				rune, _ := l.next()
+			var rootState StateFn
+			rootState = func(l *Lexer) StateFn {
+				rune, _ := l.NextRune()
 				if rune == eof {
 					return nil
 				}
-				l.emit(1337)
+				l.Emit(1337)
 				return rootState
 			}
 
-			lexerDefinition := &journalLexerDefinition{
+			lexerDefinition := &LexerDefinition{
 				initialState: rootState,
 				symbols: map[string]lexer.TokenType{
 					"Char": 1337,
@@ -104,13 +124,13 @@ func TestLexer(t *testing.T) {
 		})
 
 		t.Run("LexString runs the lexer until an error is encountered", func(t *testing.T) {
-			var rootState stateFn
-			rootState = func(l *journalLexer) stateFn {
-				l.errorf("something went wrong")
+			var rootState StateFn
+			rootState = func(l *Lexer) StateFn {
+				l.Errorf("something went wrong")
 				return nil
 			}
 
-			lexerDefinition := &journalLexerDefinition{
+			lexerDefinition := &LexerDefinition{
 				initialState: rootState,
 				symbols: map[string]lexer.TokenType{
 					"Char": 1337,

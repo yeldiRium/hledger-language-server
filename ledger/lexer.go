@@ -14,18 +14,43 @@ const eof = -1
 const (
 	itemError lexer.TokenType = iota
 	itemEOF
+
+	itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes
 )
 
-type stateFn func(*journalLexer) stateFn
+func ExtendTokenTypes(tokenTypeNames []string) map[string]lexer.TokenType {
+	symbols := map[string]lexer.TokenType{
+		"Error": itemError,
+		"EOF":   itemEOF,
+	}
 
-type journalLexerDefinition struct{
-	initialState stateFn
-	symbols map[string]lexer.TokenType
+	for k, v := range tokenTypeNames {
+		symbols[v] = lexer.TokenType(k + int(itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes) + 1)
+	}
+
+	return symbols
 }
 
-func (j *journalLexerDefinition) LexString(filename string, input string) (lexer.Lexer, error) {
-	l := &journalLexer{
+func MakeLexerDefinition(initialState StateFn, tokenTypeNames []string) *LexerDefinition {
+	definition := &LexerDefinition{
+		initialState: initialState,
+		symbols:      ExtendTokenTypes(tokenTypeNames),
+	}
+
+	return definition
+}
+
+type StateFn func(*Lexer) StateFn
+
+type LexerDefinition struct {
+	initialState StateFn
+	symbols      map[string]lexer.TokenType
+}
+
+func (j *LexerDefinition) LexString(filename string, input string) (lexer.Lexer, error) {
+	l := &Lexer{
 		name:   filename,
+		symbols: j.symbols,
 		input:  input,
 		start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 		pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
@@ -37,7 +62,7 @@ func (j *journalLexerDefinition) LexString(filename string, input string) (lexer
 	return l, nil
 }
 
-func (j *journalLexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer, error) {
+func (j *LexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer, error) {
 	input, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -46,36 +71,28 @@ func (j *journalLexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer,
 	return j.LexString(filename, string(input))
 }
 
-func (j *journalLexerDefinition) Symbols() map[string]lexer.TokenType {
-	symbols := map[string]lexer.TokenType{
-		"Error": itemError,
-		"EOF":   itemEOF,
-	}
-
-	for k, v := range j.symbols {
-		symbols[k] = v
-	}
-
-	return symbols
+func (j *LexerDefinition) Symbols() map[string]lexer.TokenType {
+	return j.symbols
 }
 
 type backupFn func()
-type journalLexer struct {
-	name   string           // used only for error reports
-	input  string           // the string being lexed
-	start  lexer.Position   // start of the current token
-	pos    lexer.Position   // current position in the input
-	tokens chan lexer.Token // channel of lexed tokens
+type Lexer struct {
+	name    string // used only for error reports
+	symbols map[string]lexer.TokenType
+	input   string           // the string being lexed
+	start   lexer.Position   // start of the current token
+	pos     lexer.Position   // current position in the input
+	tokens  chan lexer.Token // channel of lexed tokens
 }
 
-func (l *journalLexer) run(initialState stateFn) {
+func (l *Lexer) run(initialState StateFn) {
 	for state := initialState; state != nil; {
 		state = state(l)
 	}
 	close(l.tokens)
 }
 
-func (l *journalLexer) Next() (lexer.Token, error) {
+func (l *Lexer) Next() (lexer.Token, error) {
 	token, ok := <-l.tokens
 	if !ok {
 		return lexer.Token{
@@ -90,7 +107,14 @@ func (l *journalLexer) Next() (lexer.Token, error) {
 	return token, nil
 }
 
-func (l *journalLexer) emit(t lexer.TokenType) {
+func (l *Lexer) Symbol(name string) lexer.TokenType {
+	if t, ok := l.symbols[name]; ok {
+		return t
+	}
+	panic(fmt.Sprintf("unknown lexer token type: %q", name))
+}
+
+func (l *Lexer) Emit(t lexer.TokenType) {
 	l.tokens <- lexer.Token{
 		Type:  t,
 		Value: l.input[l.start.Offset:l.pos.Offset],
@@ -99,7 +123,7 @@ func (l *journalLexer) emit(t lexer.TokenType) {
 	l.start = l.pos
 }
 
-func (l *journalLexer) next() (rune, backupFn) {
+func (l *Lexer) NextRune() (rune, backupFn) {
 	backup := l.makeBackup()
 
 	if l.pos.Offset >= len(l.input) {
@@ -113,25 +137,25 @@ func (l *journalLexer) next() (rune, backupFn) {
 	return rune, backup
 }
 
-func (l *journalLexer) makeBackup() backupFn {
+func (l *Lexer) makeBackup() backupFn {
 	backupPos := l.pos
 	return func() {
 		l.pos = backupPos
 	}
 }
 
-func (l *journalLexer) ignore() {
+func (l *Lexer) Ignore() {
 	l.start = l.pos
 }
 
-func (l *journalLexer) peek() rune {
-	rune, backup := l.next()
+func (l *Lexer) Peek() rune {
+	rune, backup := l.NextRune()
 	backup()
 	return rune
 }
 
-func (l *journalLexer) accept(valid string) (bool, backupFn) {
-	rune, backup := l.next()
+func (l *Lexer) Accept(valid string) (bool, backupFn) {
+	rune, backup := l.NextRune()
 	if strings.IndexRune(valid, rune) != -1 {
 		return true, backup
 	}
@@ -139,10 +163,10 @@ func (l *journalLexer) accept(valid string) (bool, backupFn) {
 	return false, backup
 }
 
-func (l *journalLexer) acceptRun(valid string) backupFn {
+func (l *Lexer) AcceptRun(valid string) backupFn {
 	backup := l.makeBackup()
 	for {
-		rune, backupOnce := l.next()
+		rune, backupOnce := l.NextRune()
 		if strings.IndexRune(valid, rune) == -1 {
 			backupOnce()
 			break
@@ -151,10 +175,10 @@ func (l *journalLexer) acceptRun(valid string) backupFn {
 	return backup
 }
 
-func (l *journalLexer) acceptString(valid string) (bool, backupFn) {
+func (l *Lexer) AcceptString(valid string) (bool, backupFn) {
 	backup := l.makeBackup()
 	for _, r := range valid {
-		if ok, _ := l.accept(string(r)); !ok {
+		if ok, _ := l.Accept(string(r)); !ok {
 			backup()
 			return false, backup
 		}
@@ -162,10 +186,10 @@ func (l *journalLexer) acceptString(valid string) (bool, backupFn) {
 	return true, backup
 }
 
-func (l *journalLexer) acceptUntil(invalid string) backupFn {
+func (l *Lexer) AcceptUntil(invalid string) backupFn {
 	backup := l.makeBackup()
 	for {
-		rune, backupOnce := l.next()
+		rune, backupOnce := l.NextRune()
 		if strings.IndexRune(invalid, rune) != -1 {
 			backupOnce()
 			break
@@ -174,7 +198,7 @@ func (l *journalLexer) acceptUntil(invalid string) backupFn {
 	return backup
 }
 
-func (l *journalLexer) errorf(format string, args ...interface{}) stateFn {
+func (l *Lexer) Errorf(format string, args ...interface{}) StateFn {
 	l.tokens <- lexer.Token{
 		Type:  itemError,
 		Value: fmt.Sprintf(format, args...),
@@ -182,4 +206,3 @@ func (l *journalLexer) errorf(format string, args ...interface{}) stateFn {
 	}
 	return nil
 }
-

@@ -9,35 +9,35 @@ const (
 	itemAccountName
 )
 
-func lexRoot(l *journalLexer) stateFn {
-	if ok, _ := l.accept("\n"); ok {
-		l.emit(itemNewline)
+func lexRoot(l *Lexer) StateFn {
+	if ok, _ := l.Accept("\n"); ok {
+		l.Emit(itemNewline)
 		return lexRoot
 	}
-	if ok, _ := l.acceptString("account"); ok {
-		l.emit(itemAccountDirective)
-		l.acceptRun(" ")
-		l.emit(itemWhitespace)
+	if ok, _ := l.AcceptString("account"); ok {
+		l.Emit(itemAccountDirective)
+		l.AcceptRun(" ")
+		l.Emit(itemWhitespace)
 		return lexAccountDirective
 	}
 
 	return nil
 }
 
-func lexAccountDirective(l *journalLexer) stateFn {
-	l.acceptUntil("\n")
+func lexAccountDirective(l *Lexer) StateFn {
+	l.AcceptUntil("\n")
 	if l.pos.Offset == l.start.Offset {
-		l.errorf("expected account name in account directive, but found nothing")
+		l.Errorf("expected account name in account directive, but found nothing")
 	}
 	// TODO: parse account name segments
-	l.emit(itemAccountName)
-	l.accept("\n")
-	l.emit(itemNewline)
+	l.Emit(itemAccountName)
+	l.Accept("\n")
+	l.Emit(itemNewline)
 	return lexRoot
 }
 
-func MakeJournalLexer() *journalLexerDefinition {
-	return &journalLexerDefinition{
+func MakeJournalLexer() *LexerDefinition {
+	return &LexerDefinition{
 		initialState: lexRoot,
 		symbols: map[string]lexer.TokenType{
 			"Newline":          itemNewline,
