@@ -1,23 +1,14 @@
 package ledger
 
-import "github.com/alecthomas/participle/v2/lexer"
-
-const (
-	itemNewline lexer.TokenType = iota + 2
-	itemWhitespace
-	itemAccountDirective
-	itemAccountName
-)
-
 func lexRoot(l *Lexer) StateFn {
 	if ok, _ := l.Accept("\n"); ok {
-		l.Emit(itemNewline)
+		l.Emit(l.Symbol("NewLine"))
 		return lexRoot
 	}
 	if ok, _ := l.AcceptString("account"); ok {
-		l.Emit(itemAccountDirective)
+		l.Emit(l.Symbol("AccountDirective"))
 		l.AcceptRun(" ")
-		l.Emit(itemWhitespace)
+		l.Emit(l.Symbol("Whitespace"))
 		return lexAccountDirective
 	}
 
@@ -30,20 +21,17 @@ func lexAccountDirective(l *Lexer) StateFn {
 		l.Errorf("expected account name in account directive, but found nothing")
 	}
 	// TODO: parse account name segments
-	l.Emit(itemAccountName)
+	l.Emit(l.Symbol("AccountName"))
 	l.Accept("\n")
-	l.Emit(itemNewline)
+	l.Emit(l.Symbol("NewLine"))
 	return lexRoot
 }
 
 func MakeJournalLexer() *LexerDefinition {
-	return &LexerDefinition{
-		initialState: lexRoot,
-		symbols: map[string]lexer.TokenType{
-			"Newline":          itemNewline,
-			"Whitespace":       itemWhitespace,
-			"AccountDirective": itemAccountDirective,
-			"AccountName":      itemAccountName,
-		},
-	}
+	return MakeLexerDefinition(lexRoot, []string {
+		"Newline",
+		"Whitespace",
+		"AccountDirective",
+		"AccountName",
+	})
 }
