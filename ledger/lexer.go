@@ -47,7 +47,7 @@ type LexerDefinition struct {
 	symbols      map[string]lexer.TokenType
 }
 
-func (j *LexerDefinition) LexString(filename string, input string) (lexer.Lexer, error) {
+func (j *LexerDefinition) LexString(filename string, input string) (*Lexer, error) {
 	l := &Lexer{
 		name:   filename,
 		symbols: j.symbols,
