@@ -39,8 +39,12 @@ func TestLexer(t *testing.T) {
 			}, definition.symbols)
 		})
 
+		t.Run("Symbol", func(t *testing.T) {
+			// TODO: add tests
+		})
+
 		t.Run("LexString", func(t *testing.T) {
-			t.Run("LexString runs the lexer until the end of the input is reached", func(t *testing.T) {
+			t.Run("runs the lexer until the end of the input is reached", func(t *testing.T) {
 				var rootState StateFn
 				rootState = func(l *Lexer) StateFn {
 					rune, _ := l.NextRune()
@@ -72,7 +76,7 @@ func TestLexer(t *testing.T) {
 				assert.Equal(t, lexer.EOF, token.Type)
 			})
 
-			t.Run("LexString runs the lexer until an error is encountered", func(t *testing.T) {
+			t.Run("runs the lexer until an error is encountered", func(t *testing.T) {
 				var rootState StateFn
 				rootState = func(l *Lexer) StateFn {
 					l.Errorf("something went wrong")
@@ -98,7 +102,31 @@ func TestLexer(t *testing.T) {
 	})
 
 	t.Run("Lexer", func(t *testing.T) {
-		t.Run("accept", func(t *testing.T) {
+		t.Run("Symbol", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("NextRune", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("Peek", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("Ignore", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("Emit", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("Errorf", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("Accept", func(t *testing.T) {
 			t.Run("accepts a single character, returns true and advances the position", func(t *testing.T) {
 				filename := "testFile"
 				l := &Lexer{
@@ -144,6 +172,18 @@ func TestLexer(t *testing.T) {
 				backup()
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
 			})
+		})
+
+		t.Run("AcceptRun", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("AcceptString", func(t *testing.T) {
+			// TODO: add tests
+		})
+
+		t.Run("AcceptUntil", func(t *testing.T) {
+			// TODO: add tests
 		})
 	})
 }
