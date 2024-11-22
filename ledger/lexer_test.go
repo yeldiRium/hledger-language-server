@@ -38,6 +38,63 @@ func TestLexer(t *testing.T) {
 				"bar":   4,
 			}, definition.symbols)
 		})
+
+		t.Run("LexString", func(t *testing.T) {
+			t.Run("LexString runs the lexer until the end of the input is reached", func(t *testing.T) {
+				var rootState StateFn
+				rootState = func(l *Lexer) StateFn {
+					rune, _ := l.NextRune()
+					if rune == eof {
+						return nil
+					}
+					l.Emit(1337)
+					return rootState
+				}
+
+				lexerDefinition := &LexerDefinition{
+					initialState: rootState,
+					symbols: map[string]lexer.TokenType{
+						"Char": 1337,
+					},
+				}
+				lexer2, err := lexerDefinition.LexString("testFile", "foo")
+				assert.NoError(t, err)
+
+				tokens, err := collectLexerTokens(lexer2)
+				assert.NoError(t, err)
+				assert.Equal(t, []lexer.Token{
+					{Type: 1337, Value: "f", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 1, Offset: 0}},
+					{Type: 1337, Value: "o", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 2, Offset: 1}},
+					{Type: 1337, Value: "o", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 3, Offset: 2}},
+				}, tokens)
+
+				token, _ := lexer2.Next()
+				assert.Equal(t, lexer.EOF, token.Type)
+			})
+
+			t.Run("LexString runs the lexer until an error is encountered", func(t *testing.T) {
+				var rootState StateFn
+				rootState = func(l *Lexer) StateFn {
+					l.Errorf("something went wrong")
+					return nil
+				}
+
+				lexerDefinition := &LexerDefinition{
+					initialState: rootState,
+					symbols: map[string]lexer.TokenType{
+						"Char": 1337,
+					},
+				}
+				lexer2, err := lexerDefinition.LexString("testFile", "foo")
+				assert.NoError(t, err)
+
+				_, err = collectLexerTokens(lexer2)
+				assert.Error(t, err, "something went wrong")
+
+				token, _ := lexer2.Next()
+				assert.Equal(t, lexer.EOF, token.Type)
+			})
+		})
 	})
 
 	t.Run("Lexer", func(t *testing.T) {
@@ -87,63 +144,6 @@ func TestLexer(t *testing.T) {
 				backup()
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
 			})
-		})
-	})
-
-	t.Run("LexString", func(t *testing.T) {
-		t.Run("LexString runs the lexer until the end of the input is reached", func(t *testing.T) {
-			var rootState StateFn
-			rootState = func(l *Lexer) StateFn {
-				rune, _ := l.NextRune()
-				if rune == eof {
-					return nil
-				}
-				l.Emit(1337)
-				return rootState
-			}
-
-			lexerDefinition := &LexerDefinition{
-				initialState: rootState,
-				symbols: map[string]lexer.TokenType{
-					"Char": 1337,
-				},
-			}
-			lexer2, err := lexerDefinition.LexString("testFile", "foo")
-			assert.NoError(t, err)
-
-			tokens, err := collectLexerTokens(lexer2)
-			assert.NoError(t, err)
-			assert.Equal(t, []lexer.Token{
-				{Type: 1337, Value: "f", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 1, Offset: 0}},
-				{Type: 1337, Value: "o", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 2, Offset: 1}},
-				{Type: 1337, Value: "o", Pos: lexer.Position{Filename: "testFile", Line: 1, Column: 3, Offset: 2}},
-			}, tokens)
-
-			token, _ := lexer2.Next()
-			assert.Equal(t, lexer.EOF, token.Type)
-		})
-
-		t.Run("LexString runs the lexer until an error is encountered", func(t *testing.T) {
-			var rootState StateFn
-			rootState = func(l *Lexer) StateFn {
-				l.Errorf("something went wrong")
-				return nil
-			}
-
-			lexerDefinition := &LexerDefinition{
-				initialState: rootState,
-				symbols: map[string]lexer.TokenType{
-					"Char": 1337,
-				},
-			}
-			lexer2, err := lexerDefinition.LexString("testFile", "foo")
-			assert.NoError(t, err)
-
-			_, err = collectLexerTokens(lexer2)
-			assert.Error(t, err, "something went wrong")
-
-			token, _ := lexer2.Next()
-			assert.Equal(t, lexer.EOF, token.Type)
 		})
 	})
 }
