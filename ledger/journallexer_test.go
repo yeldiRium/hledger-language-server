@@ -1,4 +1,4 @@
-package ledger
+package ledger_test
 
 import (
 	"fmt"
@@ -6,11 +6,12 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
+	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func TestJournalLexer(t *testing.T) {
-	runLexerWithFilename := func(input, filename string) (*Lexer, []lexer.Token, error) {
-		lexerDefinition := MakeJournalLexer()
+	runLexerWithFilename := func(input, filename string) (*ledger.Lexer, []lexer.Token, error) {
+		lexerDefinition := ledger.MakeJournalLexer()
 		l, err := lexerDefinition.LexString(filename, input)
 		if err != nil {
 			return nil, nil, err
@@ -27,7 +28,7 @@ func TestJournalLexer(t *testing.T) {
 
 		return l, tokens, nil
 	}
-	runLexer := func(input string) (*Lexer, []lexer.Token, error) {
+	runLexer := func(input string) (*ledger.Lexer, []lexer.Token, error) {
 		return runLexerWithFilename(input, "testFile")
 	}
 

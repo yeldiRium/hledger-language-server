@@ -1,4 +1,4 @@
-package ledger
+package ledger_test
 
 import (
 	"fmt"
@@ -6,11 +6,12 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
+	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func TestJournalParser(t *testing.T) {
 	testParserWithFileContent := func(t *testing.T, testFileContent string, expectedValue interface{}) {
-		lexer2 := MakeJournalLexer()
+		lexer2 := ledger.MakeJournalLexer()
 		lex, err := lexer2.LexString("testFile", testFileContent)
 		tokens := make([]lexer.Token, 0)
 		token, err := lex.Next()
@@ -20,7 +21,7 @@ func TestJournalParser(t *testing.T) {
 		}
 		fmt.Printf("Tokens: %#v\n", tokens)
 
-		parser := MakeJournalParser()
+		parser := ledger.MakeJournalParser()
 		value, err := parser.ParseString("testFile", testFileContent)
 
 		fmt.Printf("AST: %#v\n", value)
@@ -37,7 +38,7 @@ func TestJournalParser(t *testing.T) {
 
 	t.Run("General format", func(t *testing.T) {
 		t.Run("Parses a file containing only newlines.", func(t *testing.T) {
-			testParserWithFileContent(t, "\n\n\n", &Journal{})
+			testParserWithFileContent(t, "\n\n\n", &ledger.Journal{})
 		})
 
 		//t.Run("Fails if a file does not end with a newline", func(t *testing.T) {
@@ -47,9 +48,9 @@ func TestJournalParser(t *testing.T) {
 
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
-			testParserWithFileContent(t, "account assets:Cash:Checking\n", &Journal{
-				Entries: []Entry{
-					&AccountDirective{
+			testParserWithFileContent(t, "account assets:Cash:Checking\n", &ledger.Journal{
+				Entries: []ledger.Entry{
+					&ledger.AccountDirective{
 						AccountName: "assets:Cash:Checking",
 						// AccountName: &AccountName{
 						// 	Segments: []string{"assets", "Cash", "Checking"},
@@ -60,9 +61,9 @@ func TestJournalParser(t *testing.T) {
 		})
 
 		t.Run("Parses a file containing an account directive with special characters and whitespace", func(t *testing.T) {
-			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &Journal{
-				Entries: []Entry{
-					&AccountDirective{
+			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &ledger.Journal{
+				Entries: []ledger.Entry{
+					&ledger.AccountDirective{
 						AccountName: "assets:Cash:Che cking:Spe-ci_al",
 						// AccountName: &AccountName{
 						// 	Segments: []string{"assets", "Cash", "Che cking", "Spe-ci_al"},
