@@ -47,42 +47,50 @@ type LexerDefinition struct {
 	symbols      map[string]lexer.TokenType
 }
 
-func (j *LexerDefinition) LexString(filename string, input string) (*Lexer, error) {
+func (lexerDefinition *LexerDefinition) LexString(filename string, input string) (*Lexer, error) {
 	l := &Lexer{
-		name:   filename,
-		symbols: j.symbols,
-		input:  input,
-		start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-		pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-		tokens: make(chan lexer.Token),
+		name:       filename,
+		definition: lexerDefinition,
+		input:      input,
+		start:      lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		pos:        lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		tokens:     make(chan lexer.Token),
 	}
 
-	go l.run(j.initialState)
+	go l.run(lexerDefinition.initialState)
 
 	return l, nil
 }
 
-func (j *LexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer, error) {
+func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer, error) {
 	input, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return j.LexString(filename, string(input))
+	return lexerDefinition.LexString(filename, string(input))
 }
 
-func (j *LexerDefinition) Symbols() map[string]lexer.TokenType {
-	return j.symbols
+func (lexerDefinition *LexerDefinition) Symbols() map[string]lexer.TokenType {
+	return lexerDefinition.symbols
+}
+
+func (lexerDefinition *LexerDefinition) Symbol(name string) lexer.TokenType {
+	if t, ok := lexerDefinition.symbols[name]; ok {
+		return t
+	}
+	panic(fmt.Sprintf("unknown lexer token type: %q", name))
 }
 
 type backupFn func()
 type Lexer struct {
-	name    string // used only for error reports
-	symbols map[string]lexer.TokenType
-	input   string           // the string being lexed
-	start   lexer.Position   // start of the current token
-	pos     lexer.Position   // current position in the input
-	tokens  chan lexer.Token // channel of lexed tokens
+	name       string // used only for error reports
+	definition *LexerDefinition
+	symbols    map[string]lexer.TokenType
+	input      string           // the string being lexed
+	start      lexer.Position   // start of the current token
+	pos        lexer.Position   // current position in the input
+	tokens     chan lexer.Token // channel of lexed tokens
 }
 
 func (l *Lexer) run(initialState StateFn) {
@@ -108,10 +116,7 @@ func (l *Lexer) Next() (lexer.Token, error) {
 }
 
 func (l *Lexer) Symbol(name string) lexer.TokenType {
-	if t, ok := l.symbols[name]; ok {
-		return t
-	}
-	panic(fmt.Sprintf("unknown lexer token type: %q", name))
+	return l.definition.Symbol(name)
 }
 
 func (l *Lexer) Emit(t lexer.TokenType) {
