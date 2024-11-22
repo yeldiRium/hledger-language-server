@@ -18,7 +18,7 @@ const (
 	symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols
 )
 
-func ExtendSymbols(symbolNames []string) map[string]lexer.TokenType {
+func extendSymbols(symbolNames []string) map[string]lexer.TokenType {
 	symbols := map[string]lexer.TokenType{
 		"Error": symbolError,
 		"EOF":   symbolEOF,
@@ -34,7 +34,7 @@ func ExtendSymbols(symbolNames []string) map[string]lexer.TokenType {
 func MakeLexerDefinition(initialState StateFn, symbolNames []string) *LexerDefinition {
 	definition := &LexerDefinition{
 		initialState: initialState,
-		symbols:      ExtendSymbols(symbolNames),
+		symbols:      extendSymbols(symbolNames),
 	}
 
 	return definition
