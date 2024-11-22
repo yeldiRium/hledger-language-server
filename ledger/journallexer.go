@@ -2,7 +2,7 @@ package ledger
 
 func lexRoot(l *Lexer) StateFn {
 	if ok, _ := l.Accept("\n"); ok {
-		l.Emit(l.Symbol("NewLine"))
+		l.Emit(l.Symbol("Newline"))
 		return lexRoot
 	}
 	if ok, _ := l.AcceptString("account"); ok {
@@ -23,7 +23,7 @@ func lexAccountDirective(l *Lexer) StateFn {
 	// TODO: parse account name segments
 	l.Emit(l.Symbol("AccountName"))
 	l.Accept("\n")
-	l.Emit(l.Symbol("NewLine"))
+	l.Emit(l.Symbol("Newline"))
 	return lexRoot
 }
 

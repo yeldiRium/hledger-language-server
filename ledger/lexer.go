@@ -10,7 +10,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 )
 
-const eof = -1
+const EOF = -1
 const (
 	symbolError lexer.TokenType = iota
 	symbolEOF
@@ -86,7 +86,6 @@ type backupFn func()
 type Lexer struct {
 	name       string // used only for error reports
 	definition *LexerDefinition
-	symbols    map[string]lexer.TokenType
 	input      string           // the string being lexed
 	start      lexer.Position   // start of the current token
 	pos        lexer.Position   // current position in the input
@@ -132,7 +131,7 @@ func (l *Lexer) NextRune() (rune, backupFn) {
 	backup := l.makeBackup()
 
 	if l.pos.Offset >= len(l.input) {
-		return eof, backup
+		return EOF, backup
 	}
 
 	// TODO: handle potential encoding error
@@ -162,6 +161,15 @@ func (l *Lexer) Peek() rune {
 func (l *Lexer) Accept(valid string) (bool, backupFn) {
 	rune, backup := l.NextRune()
 	if strings.IndexRune(valid, rune) != -1 {
+		return true, backup
+	}
+	backup()
+	return false, backup
+}
+
+func (l *Lexer) AcceptEof() (bool, backupFn) {
+	rune, backup := l.NextRune()
+	if rune == EOF {
 		return true, backup
 	}
 	backup()

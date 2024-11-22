@@ -1,10 +1,11 @@
-package ledger
+package ledger_test
 
 import (
 	"testing"
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
+	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func TestLexer(t *testing.T) {
@@ -22,21 +23,19 @@ func TestLexer(t *testing.T) {
 
 	t.Run("LexerDefinition", func(t *testing.T) {
 		t.Run("contains a default list of symbols", func(t *testing.T) {
-			definition := MakeLexerDefinition(nil, []string{})
-			assert.Equal(t, map[string]lexer.TokenType{
-				"Error": 0,
-				"EOF":   1,
-			}, definition.symbols)
+			definition := ledger.MakeLexerDefinition(nil, []string{})
+
+			assert.Equal(t, lexer.TokenType(0), definition.Symbol("Error"))
+			assert.Equal(t, lexer.TokenType(1), definition.Symbol("EOF"))
 		})
 
 		t.Run("can be extended with custom symbols that are automatically enumerated", func(t *testing.T) {
-			definition := MakeLexerDefinition(nil, []string{"foo", "bar"})
-			assert.Equal(t, map[string]lexer.TokenType{
-				"Error": 0,
-				"EOF":   1,
-				"foo":   3,
-				"bar":   4,
-			}, definition.symbols)
+			definition := ledger.MakeLexerDefinition(nil, []string{"foo", "bar"})
+
+			assert.Equal(t, lexer.TokenType(0), definition.Symbol("Error"))
+			assert.Equal(t, lexer.TokenType(1), definition.Symbol("EOF"))
+			assert.Equal(t, lexer.TokenType(3), definition.Symbol("foo"))
+			assert.Equal(t, lexer.TokenType(4), definition.Symbol("bar"))
 		})
 
 		t.Run("Symbol", func(t *testing.T) {
@@ -45,22 +44,23 @@ func TestLexer(t *testing.T) {
 
 		t.Run("LexString", func(t *testing.T) {
 			t.Run("runs the lexer until the end of the input is reached", func(t *testing.T) {
-				var rootState StateFn
-				rootState = func(l *Lexer) StateFn {
-					rune, _ := l.NextRune()
-					if rune == eof {
+				var rootState ledger.StateFn
+				rootState = func(l *ledger.Lexer) ledger.StateFn {
+					ok, _ := l.AcceptEof()
+					if ok {
 						return nil
 					}
+					l.NextRune()
 					l.Emit(1337)
 					return rootState
 				}
 
-				lexerDefinition := &LexerDefinition{
-					initialState: rootState,
-					symbols: map[string]lexer.TokenType{
-						"Char": 1337,
+				lexerDefinition := ledger.MakeLexerDefinition(
+					rootState,
+					[]string{
+						"Char",
 					},
-				}
+				)
 				lexer2, err := lexerDefinition.LexString("testFile", "foo")
 				assert.NoError(t, err)
 
@@ -77,18 +77,18 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("runs the lexer until an error is encountered", func(t *testing.T) {
-				var rootState StateFn
-				rootState = func(l *Lexer) StateFn {
+				var rootState ledger.StateFn
+				rootState = func(l *ledger.Lexer) ledger.StateFn {
 					l.Errorf("something went wrong")
 					return nil
 				}
 
-				lexerDefinition := &LexerDefinition{
-					initialState: rootState,
-					symbols: map[string]lexer.TokenType{
-						"Char": 1337,
+				lexerDefinition := ledger.MakeLexerDefinition(
+					rootState,
+					[]string{
+						"Char",
 					},
-				}
+				)
 				lexer2, err := lexerDefinition.LexString("testFile", "foo")
 				assert.NoError(t, err)
 
@@ -129,48 +129,51 @@ func TestLexer(t *testing.T) {
 		t.Run("Accept", func(t *testing.T) {
 			t.Run("accepts a single character, returns true and advances the position", func(t *testing.T) {
 				filename := "testFile"
-				l := &Lexer{
-					name:   filename,
-					input:  "test input",
-					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					tokens: make(chan lexer.Token),
-				}
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"test input",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
 
 				ok, _ := l.Accept("t")
 				assert.True(t, ok)
-				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.Pos())
 			})
 
 			t.Run("returns false and stays at position if the next character does not match", func(t *testing.T) {
 				filename := "testFile"
-				l := &Lexer{
-					name:   filename,
-					input:  "test input",
-					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					tokens: make(chan lexer.Token),
-				}
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"test input",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
 
 				ok, _ := l.Accept("x")
 				assert.False(t, ok)
-				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the accept call", func(t *testing.T) {
 				filename := "testFile"
-				l := &Lexer{
-					name:   filename,
-					input:  "test input",
-					start:  lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					pos:    lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					tokens: make(chan lexer.Token),
-				}
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"test input",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
 
 				_, backup := l.Accept("t")
-				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.pos)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.Pos())
 				backup()
-				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.pos)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
 			})
 		})
 
