@@ -12,29 +12,29 @@ import (
 
 const eof = -1
 const (
-	itemError lexer.TokenType = iota
-	itemEOF
+	symbolError lexer.TokenType = iota
+	symbolEOF
 
-	itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes
+	symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols
 )
 
-func ExtendTokenTypes(tokenTypeNames []string) map[string]lexer.TokenType {
+func ExtendSymbols(symbolNames []string) map[string]lexer.TokenType {
 	symbols := map[string]lexer.TokenType{
-		"Error": itemError,
-		"EOF":   itemEOF,
+		"Error": symbolError,
+		"EOF":   symbolEOF,
 	}
 
-	for k, v := range tokenTypeNames {
-		symbols[v] = lexer.TokenType(k + int(itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes) + 1)
+	for k, v := range symbolNames {
+		symbols[v] = lexer.TokenType(k + int(symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols) + 1)
 	}
 
 	return symbols
 }
 
-func MakeLexerDefinition(initialState StateFn, tokenTypeNames []string) *LexerDefinition {
+func MakeLexerDefinition(initialState StateFn, symbolNames []string) *LexerDefinition {
 	definition := &LexerDefinition{
 		initialState: initialState,
-		symbols:      ExtendTokenTypes(tokenTypeNames),
+		symbols:      ExtendSymbols(symbolNames),
 	}
 
 	return definition
@@ -100,7 +100,7 @@ func (l *Lexer) Next() (lexer.Token, error) {
 		}, nil
 	}
 
-	if token.Type == itemError {
+	if token.Type == symbolError {
 		return token, errors.New(token.Value)
 	}
 
@@ -200,7 +200,7 @@ func (l *Lexer) AcceptUntil(invalid string) backupFn {
 
 func (l *Lexer) Errorf(format string, args ...interface{}) StateFn {
 	l.tokens <- lexer.Token{
-		Type:  itemError,
+		Type:  symbolError,
 		Value: fmt.Sprintf(format, args...),
 		Pos:   l.start,
 	}

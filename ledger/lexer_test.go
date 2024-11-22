@@ -21,21 +21,21 @@ func TestLexer(t *testing.T) {
 	}
 
 	t.Run("LexerDefinition", func(t *testing.T) {
-		t.Run("contains a default list of token types", func(t *testing.T) {
+		t.Run("contains a default list of symbols", func(t *testing.T) {
 			definition := MakeLexerDefinition(nil, []string{})
 			assert.Equal(t, map[string]lexer.TokenType{
-				"Error": itemError,
-				"EOF":   itemEOF,
+				"Error": 0,
+				"EOF":   1,
 			}, definition.symbols)
 		})
 
-		t.Run("can be extended with custom token types that are automatically enumerated", func(t *testing.T) {
+		t.Run("can be extended with custom symbols that are automatically enumerated", func(t *testing.T) {
 			definition := MakeLexerDefinition(nil, []string{"foo", "bar"})
 			assert.Equal(t, map[string]lexer.TokenType{
-				"Error": itemError,
-				"EOF":   itemEOF,
-				"foo":   itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes + 1,
-				"bar":   itemThisShouldAlwaysBeLastAndIsUsedForAddingMoreTokenTypes + 2,
+				"Error": 0,
+				"EOF":   1,
+				"foo":   3,
+				"bar":   4,
 			}, definition.symbols)
 		})
 	})
