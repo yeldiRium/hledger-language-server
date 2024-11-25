@@ -221,6 +221,7 @@ func (l *Lexer) AcceptString(valid string) (bool, BackupFn) {
 	return true, backup
 }
 
+// AcceptUntil consumes runes until it finds an invalid rune _or EOF_.
 func (l *Lexer) AcceptUntil(invalid string) BackupFn {
 	backup := l.MakeBackup()
 	for {

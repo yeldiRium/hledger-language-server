@@ -1,6 +1,9 @@
 package ledger
 
 func lexRoot(l *Lexer) StateFn {
+	if ok, _ := l.AcceptEof(); ok {
+		return nil
+	}
 	if ok, _ := l.Accept("\n"); ok {
 		l.Emit(l.Symbol("Newline"))
 		return lexRoot
@@ -16,15 +19,6 @@ func lexRoot(l *Lexer) StateFn {
 	if l.pos.Offset != l.start.Offset {
 		l.Emit(l.Symbol("Garbage"))
 	}
-
-	if ok, _ := l.AcceptEof(); ok {
-		return nil
-	}
-	if ok, _ := l.Accept("\n"); !ok {
-		l.Errorf("expected newline")
-		return nil
-	}
-
 	return lexRoot
 }
 
