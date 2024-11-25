@@ -167,6 +167,15 @@ func (l *Lexer) Accept(valid string) (bool, backupFn) {
 	return false, backup
 }
 
+func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, backupFn) {
+	rune, backup := l.NextRune()
+	if valid(rune) {
+		return true, backup
+	}
+	backup()
+	return false, backup
+}
+
 func (l *Lexer) AcceptEof() (bool, backupFn) {
 	rune, backup := l.NextRune()
 	if rune == EOF {

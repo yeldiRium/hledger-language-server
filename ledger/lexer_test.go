@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -173,6 +174,44 @@ func TestLexer(t *testing.T) {
 				_, backup := l.Accept("t")
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.Pos())
 				backup()
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
+			})
+		})
+
+		t.Run("AcceptFn", func(t *testing.T) {
+			t.Run("Accepts a single character for which the callback returns true.", func(t *testing.T) {
+				filename := "testFile"
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"0",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := l.AcceptFn(func(r rune) bool {
+					return strings.IndexRune("01234", r) != -1
+				})
+				assert.True(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, l.Pos())
+			})
+
+			t.Run("Does not accept a character for which the callback returns false.", func(t *testing.T) {
+				filename := "testFile"
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"7",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := l.AcceptFn(func(r rune) bool {
+					return strings.IndexRune("01234", r) != -1
+				})
+				assert.False(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
 			})
 		})
