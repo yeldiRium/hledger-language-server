@@ -5,7 +5,7 @@ import (
 )
 
 type Journal struct {
-	Entries []Entry `parser:"(@@ | Newline)*"`
+	Entries []Entry `parser:"(@@ | Newline | Garbage)*"`
 }
 
 type Entry interface {

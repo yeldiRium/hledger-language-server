@@ -20,8 +20,9 @@ const (
 
 func extendSymbols(symbolNames []string) map[string]lexer.TokenType {
 	symbols := map[string]lexer.TokenType{
-		"Error": symbolError,
-		"EOF":   symbolEOF,
+		"Error":       symbolError,
+		"EOF":         symbolEOF,
+		"placeholder": symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols,
 	}
 
 	for k, v := range symbolNames {
@@ -197,7 +198,7 @@ func (l *Lexer) AcceptRun(valid string) BackupFn {
 	return backup
 }
 
-func (l *Lexer) AcceptRunFn(valid func (rune) bool) BackupFn {
+func (l *Lexer) AcceptRunFn(valid func(rune) bool) BackupFn {
 	backup := l.MakeBackup()
 	for {
 		rune, backupOnce := l.NextRune()
@@ -224,7 +225,7 @@ func (l *Lexer) AcceptUntil(invalid string) BackupFn {
 	backup := l.MakeBackup()
 	for {
 		rune, backupOnce := l.NextRune()
-		if strings.IndexRune(invalid, rune) != -1 {
+		if strings.IndexRune(invalid, rune) != -1 || rune == EOF {
 			backupOnce()
 			break
 		}

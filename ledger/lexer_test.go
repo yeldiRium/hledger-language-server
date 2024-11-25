@@ -40,7 +40,12 @@ func TestLexer(t *testing.T) {
 		})
 
 		t.Run("Symbol", func(t *testing.T) {
-			// TODO: add tests
+			t.Run("returns a TokenType for the given token name", func(t *testing.T) {
+				definition := ledger.MakeLexerDefinition(nil, []string{"foo", "bar"})
+
+				symbol := definition.Symbol("foo")
+				assert.Equal(t, lexer.TokenType(3), symbol)
+			})
 		})
 
 		t.Run("LexString", func(t *testing.T) {
