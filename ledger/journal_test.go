@@ -51,10 +51,9 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Checking\n", &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.AccountDirective{
-						AccountName: "assets:Cash:Checking",
-						// AccountName: &AccountName{
-						// 	Segments: []string{"assets", "Cash", "Checking"},
-						// },
+						AccountName: &ledger.AccountName{
+							Segments: []string{"assets", "Cash", "Checking"},
+						},
 					},
 				},
 			})
@@ -64,10 +63,9 @@ func TestJournalParser(t *testing.T) {
 			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.AccountDirective{
-						AccountName: "assets:Cash:Che cking:Spe-ci_al",
-						// AccountName: &AccountName{
-						// 	Segments: []string{"assets", "Cash", "Che cking", "Spe-ci_al"},
-						// },
+						AccountName: &ledger.AccountName{
+							Segments: []string{"assets", "Cash", "Che cking", "Spe-ci_al"},
+						},
 					},
 				},
 			})
@@ -360,10 +358,14 @@ payee Some Cool Person
 				&ledger.Journal{
 					Entries: []ledger.Entry{
 						&ledger.AccountDirective{
-							AccountName: "assets:Cash:Checking",
+							AccountName: &ledger.AccountName{
+								Segments: []string{"assets", "Cash", "Checking"},
+							},
 						},
 						&ledger.AccountDirective{
-							AccountName: "expenses:Gro ce:ries",
+							AccountName: &ledger.AccountName{
+								Segments: []string{"expenses", "Gro ce", "ries"},
+							},
 						},
 					},
 				},

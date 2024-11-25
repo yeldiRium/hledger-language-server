@@ -13,10 +13,14 @@ type Entry interface {
 }
 
 type AccountDirective struct {
-	AccountName string   `parser:"AccountDirective ' ' @AccountName"`
+	AccountName *AccountName   `parser:"AccountDirective ' ' @@"`
 }
 
 func (*AccountDirective) value() {}
+
+type AccountName struct {
+Segments []string `parser:"@AccountNameSegment (':' @AccountNameSegment)*"`
+}
 
 func MakeJournalParser() *participle.Parser[Journal] {
 	lexer := MakeJournalLexer()
