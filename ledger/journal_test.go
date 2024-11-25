@@ -127,259 +127,247 @@ func TestJournalParser(t *testing.T) {
 	// 	})
 	// })
 
-// 	t.Run("Comment", func(t *testing.T) {
-// 		t.Run("Parses a file containing a ;-comment", func(t *testing.T) {
-// 			testParserWithFileContent(t, "; This is a ;-comment\n", &Journal{
-// 				Entries: []Entry{
-// 					&Comment{
-// 						String: "This is a ;-comment",
-// 					},
-// 				},
-// 			})
-// 		})
-// 
-// 		t.Run("Parses a file containing a #-comment", func(t *testing.T) {
-// 			testParserWithFileContent(t, "# This is a #-comment\n", &Journal{
-// 				Entries: []Entry{
-// 					&Comment{
-// 						String: "This is a #-comment",
-// 					},
-// 				},
-// 			})
-// 		})
-// 
-// 		t.Run("Parses a file with indented comments", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`; Without indentation
-//     ; with some indentation
-//        # even more indentation
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Comment{
-// 							String: "Without indentation",
-// 						},
-// 						&Comment{
-// 							String: "with some indentation",
-// 						},
-// 						&Comment{
-// 							String: "even more indentation",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 	})
+	// 	t.Run("Comment", func(t *testing.T) {
+	// 		t.Run("Parses a file containing a ;-comment", func(t *testing.T) {
+	// 			testParserWithFileContent(t, "; This is a ;-comment\n", &Journal{
+	// 				Entries: []Entry{
+	// 					&Comment{
+	// 						String: "This is a ;-comment",
+	// 					},
+	// 				},
+	// 			})
+	// 		})
+	//
+	// 		t.Run("Parses a file containing a #-comment", func(t *testing.T) {
+	// 			testParserWithFileContent(t, "# This is a #-comment\n", &Journal{
+	// 				Entries: []Entry{
+	// 					&Comment{
+	// 						String: "This is a #-comment",
+	// 					},
+	// 				},
+	// 			})
+	// 		})
+	//
+	// 		t.Run("Parses a file with indented comments", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`; Without indentation
+	//     ; with some indentation
+	//        # even more indentation
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Comment{
+	// 							String: "Without indentation",
+	// 						},
+	// 						&Comment{
+	// 							String: "with some indentation",
+	// 						},
+	// 						&Comment{
+	// 							String: "even more indentation",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	// 	})
 
-// 	t.Run("Transaction", func(t *testing.T) {
-// 		t.Run("Parses a minimal transaction line.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2020-01-01
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date: "2020-01-01",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses the most common kind of transaction line.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2020-01-01 Some Payee | transaction reason
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date:        "2020-01-01",
-// 							Payee:       "Some Payee",
-// 							Description: "transaction reason",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a full transaction line with all features.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2020-01-01 ! (code) Payee | transaction reason  ; inline comment
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date:        "2020-01-01",
-// 							Status:      "!",
-// 							Code:        "code",
-// 							Payee:       "Payee",
-// 							Description: "transaction reason",
-// 							Comment: &InlineComment{
-// 								String: "inline comment",
-// 							},
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a pending transaction.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2020-01-01 !
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date:   "2020-01-01",
-// 							Status: "!",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a cleared transaction.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2020-01-01 *
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date:   "2020-01-01",
-// 							Status: "*",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 	})
-// 
-// 	t.Run("Posting", func(t *testing.T) {
-// 		t.Run("Parses a transaction with a minimal posting line.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2024-11-15
-//     assets:Cash:Checking
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date: "2024-11-15",
-// 							Postings: []*Posting{
-// 								&Posting{
-// 									AccountName: &AccountName{
-// 										Segments: []string{"assets", "Cash", "Checking"},
-// 									},
-// 								},
-// 							},
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a transaction with a full posting line.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2024-11-15
-//     assets:Cash:Checking    -1,234.56 €
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date: "2024-11-15",
-// 							Postings: []*Posting{
-// 								&Posting{
-// 									AccountName: &AccountName{
-// 										Segments: []string{"assets", "Cash", "Checking"},
-// 									},
-// 									Amount: "-1,234.56 €",
-// 								},
-// 							},
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a transaction with a posting line with an inline comment.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2024-11-15
-//     assets:Cash:Checking   -1,234.56 €  ; inline comment
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date: "2024-11-15",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 
-// 		t.Run("Parses a transaction with multiple postings.", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`2024-11-15
-//     expenses:Groceries      1,234.56 €
-//     assets:Cash:Checking   -1,234.56 €  ; inline comment
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Transaction{
-// 							Date: "2024-11-15",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 	})
-// 
-// 	t.Run("Mixed", func(t *testing.T) {
-// 		t.Run("Parses a journal file containing many different directives, postings and comments", func(t *testing.T) {
-// 			testParserWithFileContent(
-// 				t,
-// 				`; This is a cool journal file
-// # It includes many things
-// account assets:Cash:Checking
-// account expenses:Gro ce:ries  ; hehe
-// 
-// payee Some Cool Person
-// `,
-// 				&Journal{
-// 					Entries: []Entry{
-// 						&Comment{
-// 							String: "This is a cool journal file",
-// 						},
-// 						&Comment{
-// 							String: "It includes many things",
-// 						},
-// 						&AccountDirective{
-// 							AccountName: &AccountName{
-// 								Segments: []string{"assets", "Cash", "Checking"},
-// 							},
-// 						},
-// 						&AccountDirective{
-// 							AccountName: &AccountName{
-// 								Segments: []string{"expenses", "Gro ce", "ries"},
-// 							},
-// 							Comment: &InlineComment{
-// 								String: "hehe",
-// 							},
-// 						},
-// 						&PayeeDirective{
-// 							PayeeName: "Some Cool Person",
-// 						},
-// 					},
-// 				},
-// 			)
-// 		})
-// 	})
+	// 	t.Run("Transaction", func(t *testing.T) {
+	// 		t.Run("Parses a minimal transaction line.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2020-01-01
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date: "2020-01-01",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses the most common kind of transaction line.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2020-01-01 Some Payee | transaction reason
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date:        "2020-01-01",
+	// 							Payee:       "Some Payee",
+	// 							Description: "transaction reason",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a full transaction line with all features.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2020-01-01 ! (code) Payee | transaction reason  ; inline comment
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date:        "2020-01-01",
+	// 							Status:      "!",
+	// 							Code:        "code",
+	// 							Payee:       "Payee",
+	// 							Description: "transaction reason",
+	// 							Comment: &InlineComment{
+	// 								String: "inline comment",
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a pending transaction.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2020-01-01 !
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date:   "2020-01-01",
+	// 							Status: "!",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a cleared transaction.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2020-01-01 *
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date:   "2020-01-01",
+	// 							Status: "*",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	// 	})
+	//
+	// 	t.Run("Posting", func(t *testing.T) {
+	// 		t.Run("Parses a transaction with a minimal posting line.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2024-11-15
+	//     assets:Cash:Checking
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date: "2024-11-15",
+	// 							Postings: []*Posting{
+	// 								&Posting{
+	// 									AccountName: &AccountName{
+	// 										Segments: []string{"assets", "Cash", "Checking"},
+	// 									},
+	// 								},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a transaction with a full posting line.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2024-11-15
+	//     assets:Cash:Checking    -1,234.56 €
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date: "2024-11-15",
+	// 							Postings: []*Posting{
+	// 								&Posting{
+	// 									AccountName: &AccountName{
+	// 										Segments: []string{"assets", "Cash", "Checking"},
+	// 									},
+	// 									Amount: "-1,234.56 €",
+	// 								},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a transaction with a posting line with an inline comment.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2024-11-15
+	//     assets:Cash:Checking   -1,234.56 €  ; inline comment
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date: "2024-11-15",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	//
+	// 		t.Run("Parses a transaction with multiple postings.", func(t *testing.T) {
+	// 			testParserWithFileContent(
+	// 				t,
+	// 				`2024-11-15
+	//     expenses:Groceries      1,234.56 €
+	//     assets:Cash:Checking   -1,234.56 €  ; inline comment
+	// `,
+	// 				&Journal{
+	// 					Entries: []Entry{
+	// 						&Transaction{
+	// 							Date: "2024-11-15",
+	// 						},
+	// 					},
+	// 				},
+	// 			)
+	// 		})
+	// 	})
+	//
+	t.Run("Mixed", func(t *testing.T) {
+		t.Run("Parses a journal file containing many different directives, postings and comments", func(t *testing.T) {
+			testParserWithFileContent(
+				t,
+				`; This is a cool journal file
+# It includes many things
+account assets:Cash:Checking
+account expenses:Gro ce:ries  ; hehe
+
+payee Some Cool Person
+
+2024-11-25 ! (code) Payee | transaction reason  ; inline comment
+    expenses:Groceries      1,234.56 €
+    assets:Cash:Checking   -1,234.56 €  ; inline comment
+ `,
+				&ledger.Journal{
+					Entries: []ledger.Entry{
+						&ledger.AccountDirective{
+							AccountName: "assets:Cash:Checking",
+						},
+						&ledger.AccountDirective{
+							AccountName: "expenses:Gro ce:ries",
+						},
+					},
+				},
+			)
+		})
+	})
 }
