@@ -197,6 +197,18 @@ func (l *Lexer) AcceptRun(valid string) backupFn {
 	return backup
 }
 
+func (l *Lexer) AcceptRunFn(valid func (rune) bool) backupFn {
+	backup := l.makeBackup()
+	for {
+		rune, backupOnce := l.NextRune()
+		if !valid(rune) {
+			backupOnce()
+			break
+		}
+	}
+	return backup
+}
+
 func (l *Lexer) AcceptString(valid string) (bool, backupFn) {
 	backup := l.makeBackup()
 	for _, r := range valid {

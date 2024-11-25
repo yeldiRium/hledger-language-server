@@ -220,6 +220,25 @@ func TestLexer(t *testing.T) {
 			// TODO: add tests
 		})
 
+		t.Run("AcceptFnRun", func(t *testing.T) {
+			t.Run("Accepts a run of characters for which the callback returns true.", func(t *testing.T) {
+				filename := "testFile"
+				l := ledger.MakeLexer(
+					filename,
+					ledger.MakeLexerDefinition(nil, []string{}),
+					"0123456789",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				_ = l.AcceptRunFn(func(r rune) bool {
+					return strings.IndexRune("01234", r) != -1
+				})
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 6, Offset: 5}, l.Pos())
+			})
+		})
+
 		t.Run("AcceptString", func(t *testing.T) {
 			// TODO: add tests
 		})
