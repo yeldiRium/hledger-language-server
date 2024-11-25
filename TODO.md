@@ -14,7 +14,7 @@
     - [ ] support default year directive (`Y`)
     - [ ] support prepend account directive (`apply account` and `end apply account`)
 - common types
-    - [ ] support parsing accounts into segments
+    - [x] support parsing accounts into segments
     - [ ] support parsing amounts including currency
     - [ ] support parsing dates
 - transactions
