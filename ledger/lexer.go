@@ -82,7 +82,7 @@ func (lexerDefinition *LexerDefinition) Symbol(name string) lexer.TokenType {
 	panic(fmt.Sprintf("unknown lexer token type: %q", name))
 }
 
-type backupFn func()
+type BackupFn func()
 type Lexer struct {
 	name       string // used only for error reports
 	definition *LexerDefinition
@@ -127,8 +127,8 @@ func (l *Lexer) Emit(t lexer.TokenType) {
 	l.start = l.pos
 }
 
-func (l *Lexer) NextRune() (rune, backupFn) {
-	backup := l.makeBackup()
+func (l *Lexer) NextRune() (rune, BackupFn) {
+	backup := l.MakeBackup()
 
 	if l.pos.Offset >= len(l.input) {
 		return EOF, backup
@@ -141,7 +141,7 @@ func (l *Lexer) NextRune() (rune, backupFn) {
 	return rune, backup
 }
 
-func (l *Lexer) makeBackup() backupFn {
+func (l *Lexer) MakeBackup() BackupFn {
 	backupPos := l.pos
 	return func() {
 		l.pos = backupPos
@@ -158,7 +158,7 @@ func (l *Lexer) Peek() rune {
 	return rune
 }
 
-func (l *Lexer) Accept(valid string) (bool, backupFn) {
+func (l *Lexer) Accept(valid string) (bool, BackupFn) {
 	rune, backup := l.NextRune()
 	if strings.IndexRune(valid, rune) != -1 {
 		return true, backup
@@ -167,7 +167,7 @@ func (l *Lexer) Accept(valid string) (bool, backupFn) {
 	return false, backup
 }
 
-func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, backupFn) {
+func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, BackupFn) {
 	rune, backup := l.NextRune()
 	if valid(rune) {
 		return true, backup
@@ -176,7 +176,7 @@ func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, backupFn) {
 	return false, backup
 }
 
-func (l *Lexer) AcceptEof() (bool, backupFn) {
+func (l *Lexer) AcceptEof() (bool, BackupFn) {
 	rune, backup := l.NextRune()
 	if rune == EOF {
 		return true, backup
@@ -185,8 +185,8 @@ func (l *Lexer) AcceptEof() (bool, backupFn) {
 	return false, backup
 }
 
-func (l *Lexer) AcceptRun(valid string) backupFn {
-	backup := l.makeBackup()
+func (l *Lexer) AcceptRun(valid string) BackupFn {
+	backup := l.MakeBackup()
 	for {
 		rune, backupOnce := l.NextRune()
 		if strings.IndexRune(valid, rune) == -1 {
@@ -197,8 +197,8 @@ func (l *Lexer) AcceptRun(valid string) backupFn {
 	return backup
 }
 
-func (l *Lexer) AcceptRunFn(valid func (rune) bool) backupFn {
-	backup := l.makeBackup()
+func (l *Lexer) AcceptRunFn(valid func (rune) bool) BackupFn {
+	backup := l.MakeBackup()
 	for {
 		rune, backupOnce := l.NextRune()
 		if !valid(rune) {
@@ -209,8 +209,8 @@ func (l *Lexer) AcceptRunFn(valid func (rune) bool) backupFn {
 	return backup
 }
 
-func (l *Lexer) AcceptString(valid string) (bool, backupFn) {
-	backup := l.makeBackup()
+func (l *Lexer) AcceptString(valid string) (bool, BackupFn) {
+	backup := l.MakeBackup()
 	for _, r := range valid {
 		if ok, _ := l.Accept(string(r)); !ok {
 			backup()
@@ -220,8 +220,8 @@ func (l *Lexer) AcceptString(valid string) (bool, backupFn) {
 	return true, backup
 }
 
-func (l *Lexer) AcceptUntil(invalid string) backupFn {
-	backup := l.makeBackup()
+func (l *Lexer) AcceptUntil(invalid string) BackupFn {
+	backup := l.MakeBackup()
 	for {
 		rune, backupOnce := l.NextRune()
 		if strings.IndexRune(invalid, rune) != -1 {
