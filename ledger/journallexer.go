@@ -65,11 +65,11 @@ func lexAccountDirective(l *Lexer) StateFn {
 }
 
 func AcceptInlineCommentIndicator(l *Lexer) (bool, BackupFn) {
-	ok, backup := l.Accept("  ;")
+	ok, backup := l.AcceptString("  ;")
 	if ok {
 		return true, backup
 	}
-	ok, backup = l.Accept("  #")
+	ok, backup = l.AcceptString("  #")
 	return ok, backup
 }
 

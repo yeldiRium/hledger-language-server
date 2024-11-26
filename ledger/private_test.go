@@ -20,6 +20,10 @@ func MakeLexer(
 	}
 }
 
+func (lexer *Lexer) Start() lexer.Position {
+	return lexer.start
+}
+
 func (lexer *Lexer) Pos() lexer.Position {
 	return lexer.pos
 }

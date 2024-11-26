@@ -89,13 +89,105 @@ func TestJournalLexer(t *testing.T) {
 		})
 	})
 
+	t.Run("Helpers", func(t *testing.T) {
+		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
+			t.Run("accepts an inline comment indicator using a semicolon.", func(t *testing.T) {
+				filename := "testFile"
+				lexerDefinition := ledger.MakeLexerDefinition(
+					func(l *ledger.Lexer) ledger.StateFn { return nil },
+					[]string{
+						"Char",
+					},
+				)
+				l := ledger.MakeLexer(
+					filename,
+					lexerDefinition,
+					"  ; foo",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				assert.True(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, l.Pos())
+			})
+
+			t.Run("accepts an inline comment indicator using a hash.", func(t *testing.T) {
+				filename := "testFile"
+				lexerDefinition := ledger.MakeLexerDefinition(
+					func(l *ledger.Lexer) ledger.StateFn { return nil },
+					[]string{
+						"Char",
+					},
+				)
+				l := ledger.MakeLexer(
+					filename,
+					lexerDefinition,
+					"  # foo",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				assert.True(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, l.Pos())
+			})
+
+			t.Run("does not accept things not starting with spaces.", func(t *testing.T) {
+				filename := "testFile"
+				lexerDefinition := ledger.MakeLexerDefinition(
+					func(l *ledger.Lexer) ledger.StateFn { return nil },
+					[]string{
+						"Char",
+					},
+				)
+				l := ledger.MakeLexer(
+					filename,
+					lexerDefinition,
+					"foo",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				assert.False(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
+			})
+
+			t.Run("does not accept inline comments starting with anything else.", func(t *testing.T) {
+				filename := "testFile"
+				lexerDefinition := ledger.MakeLexerDefinition(
+					func(l *ledger.Lexer) ledger.StateFn { return nil },
+					[]string{
+						"Char",
+					},
+				)
+				l := ledger.MakeLexer(
+					filename,
+					lexerDefinition,
+					"  foo",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				assert.False(t, ok)
+				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
+			})
+		})
+	})
+
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Ignores missing accout names, since that is the parser's responsibility.", func(t *testing.T) {
 			_, _, err := runLexer("account \n")
 			assert.NoError(t, err)
 		})
 
-		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
+		t.Run("Lexes a file containing an account directive with multiple segments", func(t *testing.T) {
 			l, tokens, err := runLexer("account assets:Cash:Checking\n")
 			assert.NoError(t, err)
 			assert.Equal(
@@ -114,7 +206,7 @@ func TestJournalLexer(t *testing.T) {
 			)
 		})
 
-		t.Run("Parses a file containing an account directive with special characters and whitespace", func(t *testing.T) {
+		t.Run("Lexes a file containing an account directive with special characters and whitespace", func(t *testing.T) {
 			l, tokens, err := runLexer("account assets:Cash:Che cking:Spe-ci_al\n")
 			assert.NoError(t, err)
 			assert.Equal(
@@ -135,7 +227,7 @@ func TestJournalLexer(t *testing.T) {
 			)
 		})
 
-		t.Run("Stops parsing the account directive when it encounters an inline comment.", func(t *testing.T) {
+		t.Run("Stops lexing the account directive when it encounters an inline comment.", func(t *testing.T) {
 			l, tokens, err := runLexer("account assets:Cash:Checking  ; inline comment\n")
 			assert.NoError(t, err)
 			assert.Greater(t, len(tokens), 7)
@@ -154,7 +246,7 @@ func TestJournalLexer(t *testing.T) {
 			)
 		})
 
-		t.Run("Parses a file containing multiple account directives", func(t *testing.T) {
+		t.Run("Lexes a file containing multiple account directives", func(t *testing.T) {
 			l, tokens, err := runLexer(`account assets:Cash:Checking
 account expenses:Food:Groceries
 `)
@@ -198,12 +290,9 @@ account expenses:Food:Groceries
 		//	})
 		//})
 
-		//t.Run("Fails on more than one consecutive space within an account name", func(t *testing.T) {
-		//	testParserFails(
-		//		t,
-		//		"account assets:Cash:Che  cking\n",
-		//		"testFile:1:24: unexpected token \" \" (expected <newline>)",
-		//	)
-		//})
+		t.Run("Stops lexing the account name after a double space.", func(t *testing.T) {
+			_, _, err := runLexer("account assets:Cash:Che  cking\n")
+			assert.ErrorContains(t, err, "expected account name segment, but found nothing")
+		})
 	})
 }
