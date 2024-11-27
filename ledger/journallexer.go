@@ -17,7 +17,7 @@ func lexRoot(l *Lexer) StateFn {
 
 	l.AcceptUntil("\n")
 	if l.pos.Offset != l.start.Offset {
-		l.Emit(l.Symbol("Garbage"))
+		l.Ignore()
 	}
 	return lexRoot
 }
@@ -75,7 +75,6 @@ func AcceptInlineCommentIndicator(l *Lexer) (bool, BackupFn) {
 
 func MakeJournalLexer() *LexerDefinition {
 	return MakeLexerDefinition(lexRoot, []string{
-		"Garbage",
 		"Newline",
 		"Whitespace",
 		"AccountDirective",

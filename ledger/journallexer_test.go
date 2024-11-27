@@ -56,15 +56,10 @@ func TestJournalLexer(t *testing.T) {
 			}, tokens)
 		})
 
-		t.Run("Lexes garbage and newlines.", func(t *testing.T) {
+		t.Run("Ignores garbage and lexes newlines.", func(t *testing.T) {
 			l, tokens, err := runLexer("this is not a valid journal file\n\n heckmeck\n")
 			assert.NoError(t, err)
 			assert.Equal(t, []lexer.Token{
-				{
-					Type:  l.Symbol("Garbage"),
-					Value: "this is not a valid journal file",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1},
-				},
 				{
 					Type:  l.Symbol("Newline"),
 					Value: "\n",
@@ -74,11 +69,6 @@ func TestJournalLexer(t *testing.T) {
 					Type:  l.Symbol("Newline"),
 					Value: "\n",
 					Pos:   lexer.Position{Filename: "testFile", Offset: 33, Line: 2, Column: 1},
-				},
-				{
-					Type:  l.Symbol("Garbage"),
-					Value: " heckmeck",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 34, Line: 3, Column: 1},
 				},
 				{
 					Type:  l.Symbol("Newline"),
