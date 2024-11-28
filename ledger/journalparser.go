@@ -22,19 +22,36 @@ type AccountName struct {
 	Segments []string `parser:"@AccountNameSegment (':' @AccountNameSegment)*"`
 }
 
-type Posting struct {
-	AccountName *AccountName `parser:"Indent @@"`
+type RealPosting struct {
+	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName *AccountName `parser:"@@"`
 	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
 }
 
-func (*Posting) value() {}
+func (*RealPosting) value() {}
+
+type VirtualPosting struct {
+	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName *AccountName `parser:"'(' @@ ')'"`
+	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
+}
+
+func (*VirtualPosting) value() {}
+
+type VirtualBalancedPosting struct {
+	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName *AccountName `parser:"'[' @@ ']'"`
+	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
+}
+
+func (*VirtualBalancedPosting) value() {}
 
 func MakeJournalParser() *participle.Parser[Journal] {
 	lexer := MakeJournalLexer()
 	parser, err := participle.Build[Journal](
 		participle.Lexer(lexer),
 		participle.UseLookahead(3),
-		participle.Union[Entry](&AccountDirective{}, &Posting{}),
+		participle.Union[Entry](&AccountDirective{}, &RealPosting{}, &VirtualPosting{}, &VirtualBalancedPosting{}),
 	)
 	if err != nil {
 		panic(err)

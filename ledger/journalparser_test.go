@@ -29,12 +29,6 @@ func TestJournalParser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, value)
 	}
-	// testParserFails := func(t *testing.T, testFileContent string, errorMessage string) {
-	// 	parser := MakeJournalParser()
-	// 	_, err := parser.ParseString("testFile", testFileContent)
-
-	// 	assert.EqualError(t, err, errorMessage)
-	// }
 
 	t.Run("General format", func(t *testing.T) {
 		t.Run("Parses a file containing only newlines.", func(t *testing.T) {
@@ -353,7 +347,11 @@ payee Some Cool Person
 
 2024-11-25 ! (code) Payee | transaction reason  ; inline transction comment
     expenses:Groceries      1,234.56 €
-    assets:Cash:Checking   -1,234.56 €  ; inline posting comment
+    ! assets:Cash:Checking   -1,234.56 €  ; inline posting comment
+
+2024-11-25 Payee | transaction reason
+    (virtual:posting)      300 €
+    [balanced:virtual:posting]   = 15 €
 `,
 				&ledger.Journal{
 					Entries: []ledger.Entry{
@@ -367,22 +365,51 @@ payee Some Cool Person
 								Segments: []string{"expenses", "Gro ce", "ries"},
 							},
 						},
-						&ledger.Posting{
+						&ledger.RealPosting{
+							PostingStatus: "",
 							AccountName: &ledger.AccountName{
 								Segments: []string{"expenses", "Groceries"},
 							},
 							Amount: "1,234.56 €",
 						},
-						&ledger.Posting{
+						&ledger.RealPosting{
+							PostingStatus: "!",
 							AccountName: &ledger.AccountName{
 								Segments: []string{"assets", "Cash", "Checking"},
 							},
 							Amount: "-1,234.56 €",
 						},
+						&ledger.VirtualPosting{
+							PostingStatus: "",
+							AccountName: &ledger.AccountName{
+								Segments: []string{"virtual", "posting"},
+							},
+							Amount: "300 €",
+						},
+						&ledger.VirtualBalancedPosting{
+							PostingStatus: "",
+							AccountName: &ledger.AccountName{
+								Segments: []string{"balanced", "virtual", "posting"},
+							},
+							Amount: "= 15 €",
+						},
 					},
 				},
 			)
 		})
+
+		t.Run("fails to parse invalid inputs.", func(t *testing.T) {
+			parser := ledger.MakeJournalParser()
+			invalidInputs := []string{
+				"account assets:Cash:Checking  heckmeck\n",
+				"  (foo\n",
+			}
+
+			for _, invalidInput := range invalidInputs {
+				_, err := parser.ParseString("testFile", invalidInput)
+
+				assert.Error(t, err)
+			}
+		})
 	})
 }
-

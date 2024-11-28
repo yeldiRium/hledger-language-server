@@ -437,6 +437,21 @@ account expenses:Food:Groceries
 				assert.Error(t, err)
 			}
 		})
+
+		t.Run("does not fail on valid inputs.", func(t *testing.T) {
+			validInputs := []string{
+				"		! (expenses:Groceries)      1,234.56 €\n",
+				"  [foo]\n",
+				"         expenses\n",
+				"    ass:Check  1234  ; fgnqle\n",
+				"  assets:Checking    = $123456\n",
+			}
+
+			for _, validInput := range validInputs {
+				_, _, err := runLexer(validInput)
+				assert.NoError(t, err)
+			}
+		})
 	})
 
 	t.Run("Mixed", func(t *testing.T) {
