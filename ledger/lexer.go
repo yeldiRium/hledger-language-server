@@ -19,6 +19,7 @@ const (
 )
 
 var ErrEof = fmt.Errorf("unexpected end of file")
+var ErrBof = fmt.Errorf("unexpected beginning of file")
 
 func extendSymbols(symbolNames []string) map[string]lexer.TokenType {
 	symbols := map[string]lexer.TokenType{
@@ -275,3 +276,44 @@ func (l *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup Backup
 	return didConsumeRunes, backup, nil
 }
 
+// PeekBackwards assumes that the current position in the input
+// was reached by successfully parsing zero or more runes and
+// thus there is no invalid utf-8 in the input up until the
+// given offset.
+// Passing unchecked input may break this and result in a panic.
+func (l *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
+	offset := fromOffset - 1
+	rune := rune(-1)
+	iterations := 0
+	for {
+		if offset < 0 {
+			return -1, -1, ErrBof
+		}
+		iterations += 1
+		if iterations > 4 {
+			panic("tried to parse unicode rune for more than four bytes, this should never happen")
+		}
+
+		rune, _ = utf8.DecodeLastRuneInString(l.input[offset:])
+		if rune != utf8.RuneError {
+			break
+		}
+	}
+
+	return rune, offset, nil
+}
+
+func (l *Lexer) AssertAfter(valid string) bool {
+	if l.pos.Offset <= 0 {
+		return false
+	}
+	rune, _, err := l.PeekBackwards(l.pos.Offset)
+	if err != nil {
+		panic(err)
+	}
+
+	if strings.IndexRune(valid, rune) != -1 {
+		return true
+	}
+	return false
+}

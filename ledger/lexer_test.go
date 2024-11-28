@@ -444,5 +444,32 @@ func TestLexer(t *testing.T) {
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 12, Offset: 11}, l.Pos())
 			})
 		})
+
+		t.Run("AssertAfter", func(t *testing.T) {
+			t.Run("returns false if the current position is at the beginning of the input.", func(t *testing.T) {
+				l, _ := prepareLexer("test input", []string{}, nil)
+
+				ok := l.AssertAfter("abc")
+				assert.False(t, ok)
+			})
+
+			t.Run("returns true if the previous rune in the input belongs to the valid set.", func(t *testing.T) {
+				l, _ := prepareLexer("test input", []string{}, nil)
+
+				l.Accept("t")
+
+				ok := l.AssertAfter("t")
+				assert.True(t, ok)
+			})
+
+			t.Run("returns false if the previous rune in the input does not belong to the valid set.", func(t *testing.T) {
+				l, _ := prepareLexer("test input", []string{}, nil)
+
+				l.Accept("t")
+
+				ok := l.AssertAfter("abc")
+				assert.False(t, ok)
+			})
+		})
 	})
 }
