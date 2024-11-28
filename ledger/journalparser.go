@@ -5,7 +5,7 @@ import (
 )
 
 type Journal struct {
-	Entries []Entry `parser:"(@@ | Newline)*"`
+	Entries []Entry `parser:"(@@ | Newline | Garbage)*"`
 }
 
 type Entry interface {
@@ -13,7 +13,7 @@ type Entry interface {
 }
 
 type AccountDirective struct {
-	AccountName *AccountName `parser:"AccountDirective ' ' @@ Newline"`
+	AccountName *AccountName `parser:"AccountDirective ' ' @@ Garbage? Newline"`
 }
 
 func (*AccountDirective) value() {}

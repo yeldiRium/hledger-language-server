@@ -10,7 +10,8 @@ import (
 )
 
 func TestJournalLexer(t *testing.T) {
-	runLexerWithFilename := func(input, filename string) (*ledger.Lexer, []lexer.Token, error) {
+	filename := "testFile"
+	runLexerWithFilename := func(input string) (*ledger.Lexer, []lexer.Token, error) {
 		lexerDefinition := ledger.MakeJournalLexer()
 		l, err := lexerDefinition.LexString(filename, input)
 		if err != nil {
@@ -29,7 +30,25 @@ func TestJournalLexer(t *testing.T) {
 		return l, tokens, nil
 	}
 	runLexer := func(input string) (*ledger.Lexer, []lexer.Token, error) {
-		return runLexerWithFilename(input, "testFile")
+		return runLexerWithFilename(input)
+	}
+
+	type MiniToken struct {
+		Type  string
+		Value string
+	}
+	makeTokens := func(l *ledger.Lexer, miniTokens []MiniToken) []lexer.Token {
+		tokens := make([]lexer.Token, len(miniTokens))
+		pos := lexer.Position{Filename: filename, Offset: 0, Line: 1, Column: 1}
+		for i, token := range miniTokens {
+			tokens[i] = lexer.Token{
+				Type:  l.Symbol(token.Type),
+				Value: token.Value,
+				Pos:   pos,
+			}
+			pos.Advance(token.Value)
+		}
+		return tokens
 	}
 
 	t.Run("Miscellaneous", func(t *testing.T) {
@@ -42,47 +61,29 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("Lexes newlines", func(t *testing.T) {
 			l, tokens, err := runLexer("\n\n")
 			assert.NoError(t, err)
-			assert.Equal(t, []lexer.Token{
-				{
-					Type:  l.Symbol("Newline"),
-					Value: "\n",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1},
-				},
-				{
-					Type:  l.Symbol("Newline"),
-					Value: "\n",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 1, Line: 2, Column: 1},
-				},
-			}, tokens)
+			assert.Equal(t, makeTokens(l, []MiniToken{
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
+			}), tokens)
 		})
 
-		t.Run("Ignores garbage and lexes newlines.", func(t *testing.T) {
+		t.Run("Lexes garbage and newlines.", func(t *testing.T) {
 			l, tokens, err := runLexer("this is not a valid journal file\n\n heckmeck\n")
 			assert.NoError(t, err)
-			assert.Equal(t, []lexer.Token{
-				{
-					Type:  l.Symbol("Newline"),
-					Value: "\n",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 32, Line: 1, Column: 33},
-				},
-				{
-					Type:  l.Symbol("Newline"),
-					Value: "\n",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 33, Line: 2, Column: 1},
-				},
-				{
-					Type:  l.Symbol("Newline"),
-					Value: "\n",
-					Pos:   lexer.Position{Filename: "testFile", Offset: 43, Line: 3, Column: 10},
-				},
-			}, tokens)
+			assert.Equal(t, makeTokens(l, []MiniToken{
+				{Type: "Garbage", Value: "this is not a valid journal file"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: " heckmeck"},
+				{Type: "Newline", Value: "\n"},
+			}), tokens)
 		})
 	})
 
 	t.Run("Helpers", func(t *testing.T) {
 		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
 			t.Run("accepts an inline comment indicator using a semicolon.", func(t *testing.T) {
-				filename := "testFile"
+				filename := filename
 				lexerDefinition := ledger.MakeLexerDefinition(
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
@@ -104,7 +105,7 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("accepts an inline comment indicator using a hash.", func(t *testing.T) {
-				filename := "testFile"
+				filename := filename
 				lexerDefinition := ledger.MakeLexerDefinition(
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
@@ -126,7 +127,7 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("does not accept things not starting with spaces.", func(t *testing.T) {
-				filename := "testFile"
+				filename := filename
 				lexerDefinition := ledger.MakeLexerDefinition(
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
@@ -148,7 +149,7 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("does not accept inline comments starting with anything else.", func(t *testing.T) {
-				filename := "testFile"
+				filename := filename
 				lexerDefinition := ledger.MakeLexerDefinition(
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
@@ -182,16 +183,16 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				[]lexer.Token{
-					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
-					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 14, Line: 1, Column: 15}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: "testFile", Offset: 15, Line: 1, Column: 16}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 19, Line: 1, Column: 20}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Checking", Pos: lexer.Position{Filename: "testFile", Offset: 20, Line: 1, Column: 21}},
-					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 28, Line: 1, Column: 29}},
-				},
+				makeTokens(l, []MiniToken{
+					{Type: "AccountDirective", Value: "account"},
+					{Type: "Whitespace", Value: " "},
+					{Type: "AccountNameSegment", Value: "assets"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Cash"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Checking"},
+					{Type: "Newline", Value: "\n"},
+				}),
 				tokens,
 			)
 		})
@@ -201,18 +202,18 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				[]lexer.Token{
-					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
-					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 14, Line: 1, Column: 15}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: "testFile", Offset: 15, Line: 1, Column: 16}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 19, Line: 1, Column: 20}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Che cking", Pos: lexer.Position{Filename: "testFile", Offset: 20, Line: 1, Column: 21}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 29, Line: 1, Column: 30}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Spe-ci_al", Pos: lexer.Position{Filename: "testFile", Offset: 30, Line: 1, Column: 31}},
-					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 39, Line: 1, Column: 40}},
-				},
+				makeTokens(l, []MiniToken{
+					{Type: "AccountDirective", Value: "account"},
+					{Type: "Whitespace", Value: " "},
+					{Type: "AccountNameSegment", Value: "assets"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Cash"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Che cking"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Spe-ci_al"},
+					{Type: "Newline", Value: "\n"},
+				}),
 				tokens,
 			)
 		})
@@ -224,13 +225,13 @@ func TestJournalLexer(t *testing.T) {
 			assert.Equal(
 				t,
 				[]lexer.Token{
-					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
-					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 14, Line: 1, Column: 15}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: "testFile", Offset: 15, Line: 1, Column: 16}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 19, Line: 1, Column: 20}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Checking", Pos: lexer.Position{Filename: "testFile", Offset: 20, Line: 1, Column: 21}},
+					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: filename, Offset: 0, Line: 1, Column: 1}},
+					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: filename, Offset: 7, Line: 1, Column: 8}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: filename, Offset: 8, Line: 1, Column: 9}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 14, Line: 1, Column: 15}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: filename, Offset: 15, Line: 1, Column: 16}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 19, Line: 1, Column: 20}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Checking", Pos: lexer.Position{Filename: filename, Offset: 20, Line: 1, Column: 21}},
 				},
 				tokens[0:7],
 			)
@@ -244,22 +245,22 @@ account expenses:Food:Groceries
 			assert.Equal(
 				t,
 				[]lexer.Token{
-					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 0, Line: 1, Column: 1}},
-					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 7, Line: 1, Column: 8}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: "testFile", Offset: 8, Line: 1, Column: 9}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 14, Line: 1, Column: 15}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: "testFile", Offset: 15, Line: 1, Column: 16}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 19, Line: 1, Column: 20}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Checking", Pos: lexer.Position{Filename: "testFile", Offset: 20, Line: 1, Column: 21}},
-					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 28, Line: 1, Column: 29}},
-					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: "testFile", Offset: 29, Line: 2, Column: 1}},
-					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: "testFile", Offset: 36, Line: 2, Column: 8}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "expenses", Pos: lexer.Position{Filename: "testFile", Offset: 37, Line: 2, Column: 9}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 45, Line: 2, Column: 17}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Food", Pos: lexer.Position{Filename: "testFile", Offset: 46, Line: 2, Column: 18}},
-					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: "testFile", Offset: 50, Line: 2, Column: 22}},
-					{Type: l.Symbol("AccountNameSegment"), Value: "Groceries", Pos: lexer.Position{Filename: "testFile", Offset: 51, Line: 2, Column: 23}},
-					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: "testFile", Offset: 60, Line: 2, Column: 32}},
+					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: filename, Offset: 0, Line: 1, Column: 1}},
+					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: filename, Offset: 7, Line: 1, Column: 8}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "assets", Pos: lexer.Position{Filename: filename, Offset: 8, Line: 1, Column: 9}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 14, Line: 1, Column: 15}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Cash", Pos: lexer.Position{Filename: filename, Offset: 15, Line: 1, Column: 16}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 19, Line: 1, Column: 20}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Checking", Pos: lexer.Position{Filename: filename, Offset: 20, Line: 1, Column: 21}},
+					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: filename, Offset: 28, Line: 1, Column: 29}},
+					{Type: l.Symbol("AccountDirective"), Value: "account", Pos: lexer.Position{Filename: filename, Offset: 29, Line: 2, Column: 1}},
+					{Type: l.Symbol("Whitespace"), Value: " ", Pos: lexer.Position{Filename: filename, Offset: 36, Line: 2, Column: 8}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "expenses", Pos: lexer.Position{Filename: filename, Offset: 37, Line: 2, Column: 9}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 45, Line: 2, Column: 17}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Food", Pos: lexer.Position{Filename: filename, Offset: 46, Line: 2, Column: 18}},
+					{Type: l.Symbol("AccountNameSeparator"), Value: ":", Pos: lexer.Position{Filename: filename, Offset: 50, Line: 2, Column: 22}},
+					{Type: l.Symbol("AccountNameSegment"), Value: "Groceries", Pos: lexer.Position{Filename: filename, Offset: 51, Line: 2, Column: 23}},
+					{Type: l.Symbol("Newline"), Value: "\n", Pos: lexer.Position{Filename: filename, Offset: 60, Line: 2, Column: 32}},
 				},
 				tokens,
 			)
@@ -283,6 +284,58 @@ account expenses:Food:Groceries
 		t.Run("Stops lexing the account name after a double space.", func(t *testing.T) {
 			_, _, err := runLexer("account assets:Cash:Che  cking\n")
 			assert.ErrorContains(t, err, "expected account name segment, but found nothing")
+		})
+	})
+
+	t.Run("Mixed", func(t *testing.T) {
+		t.Run("Lexes a journal file containing many different directives, postings and comments", func(t *testing.T) {
+			l, tokens, err := runLexer(`; This is a cool journal file
+# It includes many things
+account assets:Cash:Checking
+account expenses:Gro ce:ries  ; hehe
+
+payee Some Cool Person
+
+2024-11-25 ! (code) Payee | transaction reason  ; inline comment
+    expenses:Groceries      1,234.56 €
+    assets:Cash:Checking   -1,234.56 €  ; inline comment
+`)
+
+			assert.NoError(t, err)
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Garbage", Value: "; This is a cool journal file"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "# It includes many things"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "AccountDirective", Value: "account"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "AccountNameSegment", Value: "assets"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Cash"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Checking"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "AccountDirective", Value: "account"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Gro ce"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "ries"},
+				{Type: "Garbage", Value: "  ; hehe"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "payee Some Cool Person"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "2024-11-25 ! (code) Payee | transaction reason  ; inline comment"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "    expenses:Groceries      1,234.56 €"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "    assets:Cash:Checking   -1,234.56 €  ; inline comment"},
+				{Type: "Newline", Value: "\n"},
+			})
+			assert.Equal(t, expectedTokens, tokens)
 		})
 	})
 }
