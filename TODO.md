@@ -24,10 +24,10 @@
     - [ ] support inline comment tagged transactions
     - postings
         - [x] support basic postings
-        - [ ] support postings with status indicator
-        - [ ] support virtual postings (`[...]`)
-        - [ ] support unbalanced postings (`(...)`)
-        - [ ] support assertions (`= ...`)
+        - [x] support postings with status indicator
+        - [x] support virtual postings (`[...]`)
+        - [x] support unbalanced postings (`(...)`)
+        - [x] support assertions (`= ...`)
         - [ ] support inline comment tagged postings
 - comments
     - [ ] support comments starting with `;` or `#`
