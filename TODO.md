@@ -23,7 +23,8 @@
     - [ ] support auto-posted transactions (`=`)
     - [ ] support inline comment tagged transactions
     - postings
-        - [ ] support basic postings
+        - [x] support basic postings
+        - [ ] support postings with status indicator
         - [ ] support virtual postings (`[...]`)
         - [ ] support unbalanced postings (`(...)`)
         - [ ] support assertions (`= ...`)
