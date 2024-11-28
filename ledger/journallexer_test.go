@@ -68,13 +68,13 @@ func TestJournalLexer(t *testing.T) {
 		})
 
 		t.Run("Lexes garbage and newlines.", func(t *testing.T) {
-			l, tokens, err := runLexer("this is not a valid journal file\n\n heckmeck\n")
+			l, tokens, err := runLexer("this is not a valid journal file\n\nheckmeck\n")
 			assert.NoError(t, err)
 			assert.Equal(t, makeTokens(l, []MiniToken{
 				{Type: "Garbage", Value: "this is not a valid journal file"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
-				{Type: "Garbage", Value: " heckmeck"},
+				{Type: "Garbage", Value: "heckmeck"},
 				{Type: "Newline", Value: "\n"},
 			}), tokens)
 		})
@@ -312,6 +312,133 @@ account expenses:Food:Groceries
 		})
 	})
 
+	t.Run("Posting", func(t *testing.T) {
+		t.Run("lexes a posting and its amount.", func(t *testing.T) {
+			l, tokens, err := runLexer("    expenses:Groceries      1,234.56 €  ; inline comment\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "Whitespace", Value: "      "},
+				{Type: "Amount", Value: "1,234.56 €"},
+				{Type: "Garbage", Value: "  ; inline comment"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("lexes a posting with ! status indicator.", func(t *testing.T) {
+			l, tokens, err := runLexer("    ! expenses:Groceries\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "PostingStatusIndicator", Value: "!"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("lexes a posting with * status indicator.", func(t *testing.T) {
+			l, tokens, err := runLexer("    * expenses:Groceries\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "PostingStatusIndicator", Value: "*"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("lexes a posting with a virtual account.", func(t *testing.T) {
+			l, tokens, err := runLexer("    (expenses:Groceries)      1,234.56 €\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameDelimiter", Value: "("},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "AccountNameDelimiter", Value: ")"},
+				{Type: "Whitespace", Value: "      "},
+				{Type: "Amount", Value: "1,234.56 €"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("lexes a posting with a balanced virtual account.", func(t *testing.T) {
+			l, tokens, err := runLexer("    [expenses:Groceries]      1,234.56 €\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameDelimiter", Value: "["},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "AccountNameDelimiter", Value: "]"},
+				{Type: "Whitespace", Value: "      "},
+				{Type: "Amount", Value: "1,234.56 €"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("lexes a posting with a status indicator and virtual account.", func(t *testing.T) {
+			l, tokens, err := runLexer("    ! (expenses:Groceries)      1,234.56 €\n")
+
+			expectedTokens := makeTokens(l, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "PostingStatusIndicator", Value: "!"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "AccountNameDelimiter", Value: "("},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "AccountNameDelimiter", Value: ")"},
+				{Type: "Whitespace", Value: "      "},
+				{Type: "Amount", Value: "1,234.56 €"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
+		t.Run("fails on invalid inputs.", func(t *testing.T) {
+			invalidInputs := []string{
+				"    !expenses:Groceries\n",
+				"    *expenses:Groceries\n",
+				"    )expenses:Groceries\n",
+				"    ]expenses:Groceries\n",
+			}
+
+			for _, invalidInput := range invalidInputs {
+				_, _, err := runLexer(invalidInput)
+				assert.Error(t, err)
+			}
+		})
+	})
+
 	t.Run("Mixed", func(t *testing.T) {
 		t.Run("Lexes a journal file containing many different directives, postings and comments", func(t *testing.T) {
 			l, tokens, err := runLexer(`; This is a cool journal file
@@ -320,6 +447,9 @@ account assets:Cash:Checking
 account expenses:Gro ce:ries  ; hehe
 
 payee Some Cool Person
+
+commodity EUR
+    format 1,000.00 €
 
 2024-11-25 ! (code) Payee | transaction reason  ; inline comment
     expenses:Groceries      1,234.56 €
@@ -352,11 +482,30 @@ payee Some Cool Person
 				{Type: "Garbage", Value: "payee Some Cool Person"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "commodity EUR"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Indent", Value: "    "},
+				{Type: "Garbage", Value: "format 1,000.00 €"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
 				{Type: "Garbage", Value: "2024-11-25 ! (code) Payee | transaction reason  ; inline comment"},
 				{Type: "Newline", Value: "\n"},
-				{Type: "Garbage", Value: "    expenses:Groceries      1,234.56 €"},
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "Whitespace", Value: "      "},
+				{Type: "Amount", Value: "1,234.56 €"},
 				{Type: "Newline", Value: "\n"},
-				{Type: "Garbage", Value: "    assets:Cash:Checking   -1,234.56 €  ; inline comment"},
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameSegment", Value: "assets"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Cash"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Checking"},
+				{Type: "Whitespace", Value: "   "},
+				{Type: "Amount", Value: "-1,234.56 €"},
+				{Type: "Garbage", Value: "  ; inline comment"},
 				{Type: "Newline", Value: "\n"},
 			})
 

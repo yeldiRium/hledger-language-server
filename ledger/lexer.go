@@ -282,19 +282,20 @@ func (l *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup Backup
 // given offset.
 // Passing unchecked input may break this and result in a panic.
 func (l *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
-	offset := fromOffset - 1
+	offset := fromOffset
 	rune := rune(-1)
 	iterations := 0
 	for {
+		offset -= 1
+		iterations += 1
 		if offset < 0 {
 			return -1, -1, ErrBof
 		}
-		iterations += 1
 		if iterations > 4 {
 			panic("tried to parse unicode rune for more than four bytes, this should never happen")
 		}
 
-		rune, _ = utf8.DecodeLastRuneInString(l.input[offset:])
+		rune, _ = utf8.DecodeRuneInString(l.input[offset:])
 		if rune != utf8.RuneError {
 			break
 		}
@@ -316,4 +317,8 @@ func (l *Lexer) AssertAfter(valid string) bool {
 		return true
 	}
 	return false
+}
+
+func (l *Lexer) AssertAtStart() bool {
+	return l.pos.Offset == 0
 }

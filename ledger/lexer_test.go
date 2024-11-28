@@ -470,6 +470,35 @@ func TestLexer(t *testing.T) {
 				ok := l.AssertAfter("abc")
 				assert.False(t, ok)
 			})
+
+			t.Run("does not fail when the previous rune is multiple bytes long.", func(t *testing.T) {
+				l, _ := prepareLexer("€ ", []string{}, nil)
+
+				ok, _, err := l.Accept("€")
+				assert.NoError(t, err)
+				assert.True(t, ok)
+
+				ok = l.AssertAfter("\n")
+				assert.False(t, ok)
+			})
+		})
+
+		t.Run("AssertAtStart", func(t *testing.T) {
+			t.Run("returns true if the current position is at the beginning of the input.", func(t *testing.T) {
+				l, _ := prepareLexer("test input", []string{}, nil)
+
+				ok := l.AssertAtStart()
+				assert.True(t, ok)
+			})
+
+			t.Run("returns false if the current position is not at the beginning of the input.", func(t *testing.T) {
+				l, _ := prepareLexer("test input", []string{}, nil)
+
+				l.Accept("t")
+
+				ok := l.AssertAtStart()
+				assert.False(t, ok)
+			})
 		})
 	})
 }

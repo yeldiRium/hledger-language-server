@@ -351,10 +351,10 @@ account expenses:Gro ce:ries  ; hehe
 
 payee Some Cool Person
 
-2024-11-25 ! (code) Payee | transaction reason  ; inline comment
+2024-11-25 ! (code) Payee | transaction reason  ; inline transction comment
     expenses:Groceries      1,234.56 €
-    assets:Cash:Checking   -1,234.56 €  ; inline comment
- `,
+    assets:Cash:Checking   -1,234.56 €  ; inline posting comment
+`,
 				&ledger.Journal{
 					Entries: []ledger.Entry{
 						&ledger.AccountDirective{
@@ -367,9 +367,22 @@ payee Some Cool Person
 								Segments: []string{"expenses", "Gro ce", "ries"},
 							},
 						},
+						&ledger.Posting{
+							AccountName: &ledger.AccountName{
+								Segments: []string{"expenses", "Groceries"},
+							},
+							Amount: "1,234.56 €",
+						},
+						&ledger.Posting{
+							AccountName: &ledger.AccountName{
+								Segments: []string{"assets", "Cash", "Checking"},
+							},
+							Amount: "-1,234.56 €",
+						},
 					},
 				},
 			)
 		})
 	})
 }
+
