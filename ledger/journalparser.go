@@ -2,6 +2,7 @@ package ledger
 
 import (
 	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
 )
 
 type Journal struct {
@@ -19,29 +20,32 @@ type AccountDirective struct {
 func (*AccountDirective) value() {}
 
 type AccountName struct {
+	Pos    lexer.Position
+	EndPos lexer.Position
+
 	Segments []string `parser:"@AccountNameSegment (':' @AccountNameSegment)*"`
 }
 
 type RealPosting struct {
-	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
-	AccountName *AccountName `parser:"@@"`
-	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
+	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName   *AccountName `parser:"@@"`
+	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*RealPosting) value() {}
 
 type VirtualPosting struct {
-	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
-	AccountName *AccountName `parser:"'(' @@ ')'"`
-	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
+	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName   *AccountName `parser:"'(' @@ ')'"`
+	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*VirtualPosting) value() {}
 
 type VirtualBalancedPosting struct {
-	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
-	AccountName *AccountName `parser:"'[' @@ ']'"`
-	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
+	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	AccountName   *AccountName `parser:"'[' @@ ']'"`
+	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*VirtualBalancedPosting) value() {}

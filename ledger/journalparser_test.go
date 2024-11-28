@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -26,9 +27,28 @@ func TestJournalParser(t *testing.T) {
 		parser := ledger.MakeJournalParser()
 		ast, err := parser.ParseString(filename, testFileContent)
 
-		fmt.Printf("AST: %#v\n", ast)
+		jsonAst, err := json.Marshal(ast)
+		fmt.Printf("AST: %s\n", jsonAst)
 
 		return tokens, ast, err
+	}
+	pruneMetadataFromAst := func(ast *ledger.Journal) {
+		for _, entry := range ast.Entries {
+			switch entry := entry.(type) {
+			case *ledger.AccountDirective:
+				entry.AccountName.Pos = lexer.Position{}
+				entry.AccountName.EndPos = lexer.Position{}
+			case *ledger.RealPosting:
+				entry.AccountName.Pos = lexer.Position{}
+				entry.AccountName.EndPos = lexer.Position{}
+			case *ledger.VirtualPosting:
+				entry.AccountName.Pos = lexer.Position{}
+				entry.AccountName.EndPos = lexer.Position{}
+			case *ledger.VirtualBalancedPosting:
+				entry.AccountName.Pos = lexer.Position{}
+				entry.AccountName.EndPos = lexer.Position{}
+			}
+		}
 	}
 
 	t.Run("General format", func(t *testing.T) {
@@ -359,6 +379,8 @@ payee Some Cool Person
     (virtual:posting)      300 €
     [balanced:virtual:posting]   = 15 €
 `)
+			pruneMetadataFromAst(ast)
+
 			assert.NoError(t, err)
 			assert.Equal(t,
 				&ledger.Journal{
@@ -421,3 +443,4 @@ payee Some Cool Person
 		})
 	})
 }
+
