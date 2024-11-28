@@ -99,7 +99,8 @@ func TestJournalLexer(t *testing.T) {
 					make(chan lexer.Token),
 				)
 
-				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
+				assert.NoError(t, err)
 				assert.True(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, l.Pos())
 			})
@@ -121,7 +122,8 @@ func TestJournalLexer(t *testing.T) {
 					make(chan lexer.Token),
 				)
 
-				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
+				assert.NoError(t, err)
 				assert.True(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, l.Pos())
 			})
@@ -143,7 +145,8 @@ func TestJournalLexer(t *testing.T) {
 					make(chan lexer.Token),
 				)
 
-				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
+				assert.NoError(t, err)
 				assert.False(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
 			})
@@ -165,9 +168,31 @@ func TestJournalLexer(t *testing.T) {
 					make(chan lexer.Token),
 				)
 
-				ok, _ := ledger.AcceptInlineCommentIndicator(l)
+				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
+				assert.NoError(t, err)
 				assert.False(t, ok)
 				assert.Equal(t, lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, l.Pos())
+			})
+
+			t.Run("returns an error upon encountering EOF.", func(t *testing.T) {
+				filename := filename
+				lexerDefinition := ledger.MakeLexerDefinition(
+					func(l *ledger.Lexer) ledger.StateFn { return nil },
+					[]string{
+						"Char",
+					},
+				)
+				l := ledger.MakeLexer(
+					filename,
+					lexerDefinition,
+					" ",
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+					make(chan lexer.Token),
+				)
+
+				_, _, err := ledger.AcceptInlineCommentIndicator(l)
+				assert.ErrorIs(t, err, ledger.ErrEof)
 			})
 		})
 	})
@@ -301,7 +326,6 @@ payee Some Cool Person
     assets:Cash:Checking   -1,234.56 €  ; inline comment
 `)
 
-			assert.NoError(t, err)
 			expectedTokens := makeTokens(l, []MiniToken{
 				{Type: "Garbage", Value: "; This is a cool journal file"},
 				{Type: "Newline", Value: "\n"},
@@ -335,6 +359,8 @@ payee Some Cool Person
 				{Type: "Garbage", Value: "    assets:Cash:Checking   -1,234.56 €  ; inline comment"},
 				{Type: "Newline", Value: "\n"},
 			})
+
+			assert.NoError(t, err)
 			assert.Equal(t, expectedTokens, tokens)
 		})
 	})
