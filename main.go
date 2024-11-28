@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/yeldiRium/hledger-language-server/ledger"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -65,19 +66,36 @@ func WordAroundCursor(line string, position int) string {
 func (h Handler) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	h.logger.Sugar().Infof("hovering over %s in line %d at position %d", params.TextDocument.URI, params.Position.Line, params.Position.Character)
 
-	fileContent, err := os.ReadFile(params.TextDocument.URI.Filename())
+	lineNumber := int(params.Position.Line + 1)
+	columnNumber := int(params.Position.Character + 1)
+
+	filename := params.TextDocument.URI.Filename()
+	parser := ledger.MakeJournalParser()
+	fileHandle, err := os.Open(filename)
+	defer fileHandle.Close()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	journal, err := parser.Parse(filename, fileHandle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
 
-	lines := strings.Split(string(fileContent), "\n")
-	line := lines[params.Position.Line]
-	word := WordAroundCursor(line, int(params.Position.Character))
+	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(journal, lineNumber, columnNumber)
+
+	if accountNameUnderCursor == nil {
+		return &protocol.Hover{
+			Contents: protocol.MarkupContent{
+				Kind:  protocol.Markdown,
+				Value: "Not hovering over an account name",
+			},
+		}, nil
+	}
 
 	return &protocol.Hover{
 		Contents: protocol.MarkupContent{
 			Kind:  protocol.Markdown,
-			Value: fmt.Sprintf("You're hovering over \"%s\"", word),
+			Value: fmt.Sprintf("You're hovering over \"%s\"", accountNameUnderCursor),
 		},
 	}, nil
 }

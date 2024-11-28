@@ -27,7 +27,7 @@ func TestJournalParser(t *testing.T) {
 		parser := ledger.MakeJournalParser()
 		ast, err := parser.ParseString(filename, testFileContent)
 
-		jsonAst, err := json.Marshal(ast)
+		jsonAst, _ := json.Marshal(ast)
 		fmt.Printf("AST: %s\n", jsonAst)
 
 		return tokens, ast, err
@@ -66,6 +66,8 @@ func TestJournalParser(t *testing.T) {
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
 			_, ast, err := runParser("account assets:Cash:Checking\n")
+			pruneMetadataFromAst(ast)
+
 			assert.NoError(t, err)
 			assert.Equal(t, &ledger.Journal{
 				Entries: []ledger.Entry{
@@ -80,6 +82,8 @@ func TestJournalParser(t *testing.T) {
 
 		t.Run("Parses a file containing an account directive with special characters and whitespace", func(t *testing.T) {
 			_, ast, err := runParser("account assets:Cash:Che cking:Spe-ci_al\n")
+			pruneMetadataFromAst(ast)
+
 			assert.NoError(t, err)
 			assert.Equal(t, &ledger.Journal{
 				Entries: []ledger.Entry{

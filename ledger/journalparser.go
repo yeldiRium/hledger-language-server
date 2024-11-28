@@ -1,6 +1,8 @@
 package ledger
 
 import (
+	"strings"
+
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
 )
@@ -24,6 +26,10 @@ type AccountName struct {
 	EndPos lexer.Position
 
 	Segments []string `parser:"@AccountNameSegment (':' @AccountNameSegment)*"`
+}
+
+func (accountName *AccountName) String() string {
+	return strings.Join(accountName.Segments, ":")
 }
 
 type RealPosting struct {
