@@ -13,7 +13,7 @@ type Entry interface {
 }
 
 type AccountDirective struct {
-	AccountName *AccountName `parser:"AccountDirective ' ' @@ Garbage? Newline"`
+	AccountName *AccountName `parser:"AccountDirective ' ' @@ (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*AccountDirective) value() {}
@@ -25,7 +25,7 @@ type AccountName struct {
 type RealPosting struct {
 	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
 	AccountName *AccountName `parser:"@@"`
-	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
+	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*RealPosting) value() {}
@@ -33,7 +33,7 @@ func (*RealPosting) value() {}
 type VirtualPosting struct {
 	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
 	AccountName *AccountName `parser:"'(' @@ ')'"`
-	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
+	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*VirtualPosting) value() {}
@@ -41,7 +41,7 @@ func (*VirtualPosting) value() {}
 type VirtualBalancedPosting struct {
 	PostingStatus string		 `parser:"Indent (@('*' | '!') ' ')?"`
 	AccountName *AccountName `parser:"'[' @@ ']'"`
-	Amount      string       `parser:"(Whitespace @Amount)? Garbage? Newline"`
+	Amount      string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*VirtualBalancedPosting) value() {}

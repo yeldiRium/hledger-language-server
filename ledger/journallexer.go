@@ -57,47 +57,22 @@ func lexRoot(l *Lexer) StateFn {
 }
 
 func lexAccountDirective(l *Lexer) StateFn {
-	for {
-		if ok, _, err := AcceptInlineCommentIndicator(l); err != nil {
-			l.Error(err)
-			return nil
-		} else if ok {
-			return lexRoot // TODO: Handle inline comment
-		}
-
-		if ok, _, err := l.Accept(":"); err != nil {
-			l.Error(err)
-			return nil
-		} else if ok {
-			l.Emit(l.Symbol("AccountNameSeparator"))
-			continue
-		}
-
-		if ok, _, err := l.Accept("\n"); err != nil {
-			l.Error(err)
-			return nil
-		} else if ok {
-			l.Emit(l.Symbol("Newline"))
-			return lexRoot
-		}
-
-		if didConsumeRunes, _, err := l.AcceptRunFn(func(r rune) bool {
-			if r == ' ' {
-				nextRune := l.Peek()
-				if nextRune == ' ' {
-					return false
-				}
-				return true
-			}
-			return r != '\n' && r != ':'
-		}); err != nil {
-			l.Error(err)
-			return nil
-		} else if !didConsumeRunes {
-			l.Errorf("expected account name segment, but found nothing")
-		}
-		l.Emit(l.Symbol("AccountNameSegment"))
+	if ok, _, err := AcceptAccountName(l); err != nil {
+		l.Error(err)
+		return nil
+	} else if !ok {
+		l.Errorf("expected account name")
+		return nil
 	}
+
+	if ok, _, err := AcceptInlineCommentIndicator(l); err != nil {
+		l.Error(err)
+		return nil
+	} else if ok {
+		return lexRoot // TODO: Handle inline comment
+	}
+
+	return lexRoot
 }
 
 func AcceptAccountName(l *Lexer) (didConsumeAccountNameSegments bool, backup BackupFn, err error) {
@@ -220,13 +195,23 @@ func AcceptCommentIndicator(l *Lexer) (bool, BackupFn, error) {
 }
 
 func AcceptInlineCommentIndicator(l *Lexer) (bool, BackupFn, error) {
-	// TODO: Emit lineCommentIndicator token.
-	if ok, backup, err := l.AcceptString("  ;"); err != nil {
+	backup := l.MakeBackup()
+
+	if ok, _, err := l.AcceptString("  ;"); err != nil {
 		return false, nil, err
 	} else if ok {
+		l.Emit(l.Symbol("InlineCommentIndicator"))
 		return true, backup, nil
 	}
-	return l.AcceptString("  #")
+
+	if ok, _, err := l.AcceptString("  #"); err != nil {
+		return false, nil, err
+	} else if ok {
+		l.Emit(l.Symbol("InlineCommentIndicator"))
+		return true, backup, nil
+	}
+
+	return false, backup, nil
 }
 
 func MakeJournalLexer() *LexerDefinition {
@@ -241,5 +226,6 @@ func MakeJournalLexer() *LexerDefinition {
 		"Amount",
 		"PostingStatusIndicator",
 		"AccountNameDelimiter",
+		"InlineCommentIndicator",
 	})
 }

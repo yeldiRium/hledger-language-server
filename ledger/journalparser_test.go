@@ -10,9 +10,11 @@ import (
 )
 
 func TestJournalParser(t *testing.T) {
-	testParserWithFileContent := func(t *testing.T, testFileContent string, expectedValue interface{}) {
+	filename := "testFile"
+
+	runParser := func(testFileContent string) ([]lexer.Token, *ledger.Journal, error) {
 		lexer2 := ledger.MakeJournalLexer()
-		lex, err := lexer2.LexString("testFile", testFileContent)
+		lex, err := lexer2.LexString(filename, testFileContent)
 		tokens := make([]lexer.Token, 0)
 		token, err := lex.Next()
 		for err == nil && token.Type != lexer.EOF {
@@ -22,17 +24,18 @@ func TestJournalParser(t *testing.T) {
 		fmt.Printf("Tokens: %#v\n", tokens)
 
 		parser := ledger.MakeJournalParser()
-		value, err := parser.ParseString("testFile", testFileContent)
+		ast, err := parser.ParseString(filename, testFileContent)
 
-		fmt.Printf("AST: %#v\n", value)
+		fmt.Printf("AST: %#v\n", ast)
 
-		assert.NoError(t, err)
-		assert.Equal(t, expectedValue, value)
+		return tokens, ast, err
 	}
 
 	t.Run("General format", func(t *testing.T) {
 		t.Run("Parses a file containing only newlines.", func(t *testing.T) {
-			testParserWithFileContent(t, "\n\n\n", &ledger.Journal{})
+			_, ast, err := runParser("\n\n\n")
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{}, ast)
 		})
 
 		//t.Run("Fails if a file does not end with a newline", func(t *testing.T) {
@@ -42,7 +45,9 @@ func TestJournalParser(t *testing.T) {
 
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
-			testParserWithFileContent(t, "account assets:Cash:Checking\n", &ledger.Journal{
+			_, ast, err := runParser("account assets:Cash:Checking\n")
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.AccountDirective{
 						AccountName: &ledger.AccountName{
@@ -50,11 +55,13 @@ func TestJournalParser(t *testing.T) {
 						},
 					},
 				},
-			})
+			}, ast)
 		})
 
 		t.Run("Parses a file containing an account directive with special characters and whitespace", func(t *testing.T) {
-			testParserWithFileContent(t, "account assets:Cash:Che cking:Spe-ci_al\n", &ledger.Journal{
+			_, ast, err := runParser("account assets:Cash:Che cking:Spe-ci_al\n")
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.AccountDirective{
 						AccountName: &ledger.AccountName{
@@ -62,7 +69,7 @@ func TestJournalParser(t *testing.T) {
 						},
 					},
 				},
-			})
+			}, ast)
 		})
 
 		// t.Run("Parses a file containing an account directive followed by an inline comment", func(t *testing.T) {
@@ -336,8 +343,7 @@ func TestJournalParser(t *testing.T) {
 	//
 	t.Run("Mixed", func(t *testing.T) {
 		t.Run("Parses a journal file containing many different directives, postings and comments", func(t *testing.T) {
-			testParserWithFileContent(
-				t,
+			_, ast, err := runParser(
 				`; This is a cool journal file
 # It includes many things
 account assets:Cash:Checking
@@ -352,7 +358,9 @@ payee Some Cool Person
 2024-11-25 Payee | transaction reason
     (virtual:posting)      300 €
     [balanced:virtual:posting]   = 15 €
-`,
+`)
+			assert.NoError(t, err)
+			assert.Equal(t,
 				&ledger.Journal{
 					Entries: []ledger.Entry{
 						&ledger.AccountDirective{
@@ -395,18 +403,18 @@ payee Some Cool Person
 						},
 					},
 				},
+				ast,
 			)
 		})
 
 		t.Run("fails to parse invalid inputs.", func(t *testing.T) {
-			parser := ledger.MakeJournalParser()
 			invalidInputs := []string{
 				"account assets:Cash:Checking  heckmeck\n",
 				"  (foo\n",
 			}
 
 			for _, invalidInput := range invalidInputs {
-				_, err := parser.ParseString("testFile", invalidInput)
+				_, _, err := runParser(invalidInput)
 
 				assert.Error(t, err)
 			}

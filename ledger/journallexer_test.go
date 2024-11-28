@@ -82,12 +82,13 @@ func TestJournalLexer(t *testing.T) {
 
 	t.Run("Helpers", func(t *testing.T) {
 		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
-			t.Run("accepts an inline comment indicator using a semicolon.", func(t *testing.T) {
+			t.Run("accepts an inline comment indicator using a semicolon and emits a token.", func(t *testing.T) {
 				filename := filename
 				lexerDefinition := ledger.MakeLexerDefinition(
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
 						"Char",
+						"InlineCommentIndicator",
 					},
 				)
 				l := ledger.MakeLexer(
@@ -96,7 +97,7 @@ func TestJournalLexer(t *testing.T) {
 					"  ; foo",
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					make(chan lexer.Token),
+					make(chan lexer.Token, 1),
 				)
 
 				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
@@ -111,6 +112,7 @@ func TestJournalLexer(t *testing.T) {
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
 						"Char",
+						"InlineCommentIndicator",
 					},
 				)
 				l := ledger.MakeLexer(
@@ -119,7 +121,7 @@ func TestJournalLexer(t *testing.T) {
 					"  # foo",
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					make(chan lexer.Token),
+					make(chan lexer.Token, 1),
 				)
 
 				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
@@ -134,6 +136,7 @@ func TestJournalLexer(t *testing.T) {
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
 						"Char",
+						"InlineCommentIndicator",
 					},
 				)
 				l := ledger.MakeLexer(
@@ -142,7 +145,7 @@ func TestJournalLexer(t *testing.T) {
 					"foo",
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					make(chan lexer.Token),
+					make(chan lexer.Token, 1),
 				)
 
 				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
@@ -157,6 +160,7 @@ func TestJournalLexer(t *testing.T) {
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
 						"Char",
+						"InlineCommentIndicator",
 					},
 				)
 				l := ledger.MakeLexer(
@@ -165,7 +169,7 @@ func TestJournalLexer(t *testing.T) {
 					"  foo",
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					make(chan lexer.Token),
+					make(chan lexer.Token, 1),
 				)
 
 				ok, _, err := ledger.AcceptInlineCommentIndicator(l)
@@ -180,6 +184,7 @@ func TestJournalLexer(t *testing.T) {
 					func(l *ledger.Lexer) ledger.StateFn { return nil },
 					[]string{
 						"Char",
+						"InlineCommentIndicator",
 					},
 				)
 				l := ledger.MakeLexer(
@@ -188,7 +193,7 @@ func TestJournalLexer(t *testing.T) {
 					" ",
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
 					lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-					make(chan lexer.Token),
+					make(chan lexer.Token, 1),
 				)
 
 				_, _, err := ledger.AcceptInlineCommentIndicator(l)
@@ -198,11 +203,6 @@ func TestJournalLexer(t *testing.T) {
 	})
 
 	t.Run("Account directive", func(t *testing.T) {
-		t.Run("Ignores missing accout names, since that is the parser's responsibility.", func(t *testing.T) {
-			_, _, err := runLexer("account \n")
-			assert.NoError(t, err)
-		})
-
 		t.Run("Lexes a file containing an account directive with multiple segments", func(t *testing.T) {
 			l, tokens, err := runLexer("account assets:Cash:Checking\n")
 			assert.NoError(t, err)
@@ -305,11 +305,6 @@ account expenses:Food:Groceries
 		//		},
 		//	})
 		//})
-
-		t.Run("Stops lexing the account name after a double space.", func(t *testing.T) {
-			_, _, err := runLexer("account assets:Cash:Che  cking\n")
-			assert.ErrorContains(t, err, "expected account name segment, but found nothing")
-		})
 	})
 
 	t.Run("Posting", func(t *testing.T) {
@@ -323,7 +318,8 @@ account expenses:Food:Groceries
 				{Type: "AccountNameSegment", Value: "Groceries"},
 				{Type: "Whitespace", Value: "      "},
 				{Type: "Amount", Value: "1,234.56 €"},
-				{Type: "Garbage", Value: "  ; inline comment"},
+				{Type: "InlineCommentIndicator", Value: "  ;"},
+				{Type: "Garbage", Value: " inline comment"},
 				{Type: "Newline", Value: "\n"},
 			})
 
@@ -491,7 +487,8 @@ commodity EUR
 				{Type: "AccountNameSegment", Value: "Gro ce"},
 				{Type: "AccountNameSeparator", Value: ":"},
 				{Type: "AccountNameSegment", Value: "ries"},
-				{Type: "Garbage", Value: "  ; hehe"},
+				{Type: "InlineCommentIndicator", Value: "  ;"},
+				{Type: "Garbage", Value: " hehe"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Garbage", Value: "payee Some Cool Person"},
@@ -520,7 +517,8 @@ commodity EUR
 				{Type: "AccountNameSegment", Value: "Checking"},
 				{Type: "Whitespace", Value: "   "},
 				{Type: "Amount", Value: "-1,234.56 €"},
-				{Type: "Garbage", Value: "  ; inline comment"},
+				{Type: "InlineCommentIndicator", Value: "  ;"},
+				{Type: "Garbage", Value: " inline comment"},
 				{Type: "Newline", Value: "\n"},
 			})
 
