@@ -19,9 +19,20 @@ func lexRoot(lexer *lexing.Lexer) lexing.StateFn {
 		return nil
 	} else if ok {
 		lexer.Emit(lexer.Symbol("AccountDirective"))
-		lexer.AcceptRun(" ")
-		lexer.Emit(lexer.Symbol("Whitespace"))
+		if ok, _, _ := lexer.AcceptRun(" "); ok {
+			lexer.Emit(lexer.Symbol("Whitespace"))
+		}
 		return lexAccountDirective
+	}
+	if ok, _, err := lexer.AcceptString("include"); err != nil {
+		lexer.Error(err)
+		return nil
+	} else if ok {
+		lexer.Emit(lexer.Symbol("IncludeDirective"))
+		if ok, _, _ := lexer.AcceptRun(" "); ok {
+			lexer.Emit(lexer.Symbol("Whitespace"))
+		}
+		return lexIncludeDirective
 	}
 
 	if lexer.AssertAfter("\n") || lexer.AssertAtStart() {
@@ -54,6 +65,14 @@ func lexRoot(lexer *lexing.Lexer) lexing.StateFn {
 		return nil
 	} else if didConsumeRunes {
 		lexer.Emit(lexer.Symbol("Garbage"))
+	}
+	return lexRoot
+}
+
+func lexIncludeDirective(lexer *lexing.Lexer) lexing.StateFn {
+	ok, _, _ := lexer.AcceptUntil("\n")
+	if ok {
+		lexer.Emit(lexer.Symbol("IncludePath"))
 	}
 	return lexRoot
 }
@@ -229,5 +248,7 @@ func NewJournalLexer() *lexing.LexerDefinition {
 		"PostingStatusIndicator",
 		"AccountNameDelimiter",
 		"InlineCommentIndicator",
+		"IncludeDirective",
+		"IncludePath",
 	})
 }

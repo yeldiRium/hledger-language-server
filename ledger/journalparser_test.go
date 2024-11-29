@@ -60,6 +60,42 @@ func TestJournalParser(t *testing.T) {
 		})
 	})
 
+	t.Run("Include directive", func(t *testing.T) {
+		t.Run("Parses a file containing an include directive with a path.", func(t *testing.T) {
+			_, ast, err := runParser("include some/path.journal\n")
+			pruneMetadataFromAst(ast)
+
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{
+				Entries: []ledger.Entry{
+					&ledger.IncludeDirective{
+						IncludePath: "some/path.journal",
+					},
+				},
+			}, ast)
+		})
+
+		t.Run("Allows multiple spaces before the path.", func(t *testing.T) {
+			_, ast, err := runParser("include    some/path.journal\n")
+			pruneMetadataFromAst(ast)
+
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{
+				Entries: []ledger.Entry{
+					&ledger.IncludeDirective{
+						IncludePath: "some/path.journal",
+					},
+				},
+			}, ast)
+		})
+
+		t.Run("Fail if an include does not have a path.", func(t *testing.T) {
+			_, _, err := runParser("include\n")
+
+			assert.Error(t, err)
+		})
+	})
+
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Parses a file containing an account directive with multiple segments", func(t *testing.T) {
 			_, ast, err := runParser("account assets:Cash:Checking\n")
@@ -92,6 +128,28 @@ func TestJournalParser(t *testing.T) {
 				},
 			}, ast)
 		})
+
+		t.Run("Allows multiple spaces before the account name.", func(t *testing.T) {
+			_, ast, err := runParser("account    assets:Cash\n")
+			pruneMetadataFromAst(ast)
+
+			assert.NoError(t, err)
+			assert.Equal(t, &ledger.Journal{
+				Entries: []ledger.Entry{
+					&ledger.AccountDirective{
+						AccountName: &ledger.AccountName{
+							Segments: []string{"assets", "Cash"},
+						},
+					},
+				},
+			}, ast)
+		})
+
+		t.Run("Returns an error if the account name is missing.", func(t *testing.T) {
+			_, _, err := runParser("account\n")
+
+			assert.Error(t, err)
+		})
 	})
 
 	t.Run("Mixed", func(t *testing.T) {
@@ -99,6 +157,10 @@ func TestJournalParser(t *testing.T) {
 			_, ast, err := runParser(
 				`; This is a cool journal file
 # It includes many things
+
+include someLong/Pathof/things.journal
+include also/there-are-no/inlinecomments/after.includes  ; this is part of the path
+
 account assets:Cash:Checking
 account expenses:Gro ce:ries  ; hehe
 
@@ -118,6 +180,12 @@ payee Some Cool Person
 			assert.Equal(t,
 				&ledger.Journal{
 					Entries: []ledger.Entry{
+						&ledger.IncludeDirective{
+							IncludePath: "someLong/Pathof/things.journal",
+						},
+						&ledger.IncludeDirective{
+							IncludePath: "also/there-are-no/inlinecomments/after.includes  ; this is part of the path",
+						},
 						&ledger.AccountDirective{
 							AccountName: &ledger.AccountName{
 								Segments: []string{"assets", "Cash", "Checking"},
@@ -176,4 +244,3 @@ payee Some Cool Person
 		})
 	})
 }
-

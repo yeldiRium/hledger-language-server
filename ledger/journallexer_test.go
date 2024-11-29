@@ -204,6 +204,36 @@ func TestJournalLexer(t *testing.T) {
 		})
 	})
 
+	t.Run("Include directive", func(t *testing.T) {
+		t.Run("Lexes a file containing an include directive with a path.", func(t *testing.T) {
+			lexer, tokens, err := runLexer("include some/path.journal\n")
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				makeTokens(lexer, []MiniToken{
+					{Type: "IncludeDirective", Value: "include"},
+					{Type: "Whitespace", Value: " "},
+					{Type: "IncludePath", Value: "some/path.journal"},
+					{Type: "Newline", Value: "\n"},
+				}),
+				tokens,
+			)
+		})
+
+		t.Run("Lexes a file containing an include directive without a path.", func(t *testing.T) {
+			lexer, tokens, err := runLexer("include\n")
+			assert.NoError(t, err)
+			assert.Equal(
+				t,
+				makeTokens(lexer, []MiniToken{
+					{Type: "IncludeDirective", Value: "include"},
+					{Type: "Newline", Value: "\n"},
+				}),
+				tokens,
+			)
+		})
+	})
+
 	t.Run("Account directive", func(t *testing.T) {
 		t.Run("Lexes a file containing an account directive with multiple segments", func(t *testing.T) {
 			lexer, tokens, err := runLexer("account assets:Cash:Checking\n")
@@ -441,6 +471,10 @@ account expenses:Food:Groceries
 		t.Run("Lexes a journal file containing many different directives, postings and comments", func(t *testing.T) {
 			lexer, tokens, err := runLexer(`; This is a cool journal file
 # It includes many things
+
+include someLong/Pathof/things.journal
+include   also/there-are-no/inlinecomments/after.includes  ; this is part of the path
+
 account assets:Cash:Checking
 account expenses:Gro ce:ries  ; hehe
 
@@ -458,6 +492,16 @@ commodity EUR
 				{Type: "Garbage", Value: "; This is a cool journal file"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Garbage", Value: "# It includes many things"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "IncludeDirective", Value: "include"},
+				{Type: "Whitespace", Value: " "},
+				{Type: "IncludePath", Value: "someLong/Pathof/things.journal"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "IncludeDirective", Value: "include"},
+				{Type: "Whitespace", Value: "   "},
+				{Type: "IncludePath", Value: "also/there-are-no/inlinecomments/after.includes  ; this is part of the path"},
+				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "AccountDirective", Value: "account"},
 				{Type: "Whitespace", Value: " "},

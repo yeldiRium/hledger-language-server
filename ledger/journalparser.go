@@ -15,8 +15,14 @@ type Entry interface {
 	value()
 }
 
+type IncludeDirective struct {
+	IncludePath string `parser:"'include' Whitespace @IncludePath Newline"`
+}
+
+func (*IncludeDirective) value() {}
+
 type AccountDirective struct {
-	AccountName *AccountName `parser:"AccountDirective ' ' @@ (InlineCommentIndicator Garbage)? Newline"`
+	AccountName *AccountName `parser:"'account' Whitespace @@ (InlineCommentIndicator Garbage)? Newline"`
 }
 
 func (*AccountDirective) value() {}
@@ -61,7 +67,7 @@ func NewJournalParser() *participle.Parser[Journal] {
 	parser, err := participle.Build[Journal](
 		participle.Lexer(lexer),
 		participle.UseLookahead(3),
-		participle.Union[Entry](&AccountDirective{}, &RealPosting{}, &VirtualPosting{}, &VirtualBalancedPosting{}),
+		participle.Union[Entry](&IncludeDirective{}, &AccountDirective{}, &RealPosting{}, &VirtualPosting{}, &VirtualBalancedPosting{}),
 	)
 	if err != nil {
 		panic(err)
