@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	parser := ledger.MakeJournalParser()
+	parser := ledger.NewJournalParser()
 	fmt.Println(parser.String())
 }

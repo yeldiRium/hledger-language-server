@@ -15,7 +15,7 @@ func TestJournalParser(t *testing.T) {
 	filename := "testFile"
 
 	runParser := func(testFileContent string) ([]participleLexer.Token, *ledger.Journal, error) {
-		lexer := ledger.MakeJournalLexer()
+		lexer := ledger.NewJournalLexer()
 		lex, err := lexer.LexString(filename, testFileContent)
 		tokens := make([]participleLexer.Token, 0)
 		token, err := lex.Next()
@@ -25,7 +25,7 @@ func TestJournalParser(t *testing.T) {
 		}
 		fmt.Printf("Tokens: %#v\n", tokens)
 
-		parser := ledger.MakeJournalParser()
+		parser := ledger.NewJournalParser()
 		ast, err := parser.ParseString(filename, testFileContent)
 
 		jsonAst, _ := json.Marshal(ast)

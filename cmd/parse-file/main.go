@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	parser := ledger.MakeJournalParser()
+	parser := ledger.NewJournalParser()
 	tokens, err := parser.Lex("stdin", os.Stdin)
 	if err != nil {
 		fmt.Printf("An error occured: %v\n\n", err)

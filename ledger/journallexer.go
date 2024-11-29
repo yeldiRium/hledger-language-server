@@ -78,7 +78,7 @@ func lexAccountDirective(lexer *lexing.Lexer) lexing.StateFn {
 }
 
 func AcceptAccountName(lexer *lexing.Lexer) (didConsumeAccountNameSegments bool, backup lexing.BackupFn, err error) {
-	backup = lexer.MakeBackup()
+	backup = lexer.NewBackup()
 	didConsumeAccountNameSegments = false
 
 	for {
@@ -197,7 +197,7 @@ func AcceptCommentIndicator(lexer *lexing.Lexer) (bool, lexing.BackupFn, error) 
 }
 
 func AcceptInlineCommentIndicator(lexer *lexing.Lexer) (bool, lexing.BackupFn, error) {
-	backup := lexer.MakeBackup()
+	backup := lexer.NewBackup()
 
 	if ok, _, err := lexer.AcceptString("  ;"); err != nil {
 		return false, nil, err
@@ -216,8 +216,8 @@ func AcceptInlineCommentIndicator(lexer *lexing.Lexer) (bool, lexing.BackupFn, e
 	return false, backup, nil
 }
 
-func MakeJournalLexer() *lexing.LexerDefinition {
-	return lexing.MakeLexerDefinition(lexRoot, []string{
+func NewJournalLexer() *lexing.LexerDefinition {
+	return lexing.NewLexerDefinition(lexRoot, []string{
 		"Garbage",
 		"Newline",
 		"Whitespace",

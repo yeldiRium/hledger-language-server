@@ -26,5 +26,5 @@ func ExampleLexerDefinition() {
 
 		return rootState
 	}
-	lexing.MakeLexerDefinition(rootState, []string{"String", "Newline"})
+	lexing.NewLexerDefinition(rootState, []string{"String", "Newline"})
 }

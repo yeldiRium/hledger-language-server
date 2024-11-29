@@ -35,13 +35,13 @@ func extendSymbols(symbolNames []string) map[string]participleLexer.TokenType {
 	return symbols
 }
 
-// MakeLexerDefinition creates a new lexer definition and sets a starting state
+// NewLexerDefinition creates a new lexer definition and sets a starting state
 // as well as creating a list of token types that can be emitted by derived
 // lexers.
 // The list of token types is created programatically so that tests and checks
 // for certain types do not rely on magic numbers but explicitly defined symbol
 // names.
-func MakeLexerDefinition(initialState StateFn, symbolNames []string) *LexerDefinition {
+func NewLexerDefinition(initialState StateFn, symbolNames []string) *LexerDefinition {
 	definition := &LexerDefinition{
 		initialState: initialState,
 		symbols:      extendSymbols(symbolNames),
@@ -111,10 +111,10 @@ type Lexer struct {
 	tokens     chan participleLexer.Token // channel of lexed tokens
 }
 
-// MakeLexer creates a new lexer instance by hand.
+// NewLexer creates a new lexer instance by hand.
 // You should never have to use this except when testing your own Accept... or
 // Assert... functions.
-func MakeLexer(
+func NewLexer(
 	name string,
 	definition *LexerDefinition,
 	input string,
@@ -167,7 +167,7 @@ func (lexer *Lexer) Symbol(name string) participleLexer.TokenType {
 }
 
 func (lexer *Lexer) NextRune() (rune, BackupFn) {
-	backup := lexer.MakeBackup()
+	backup := lexer.NewBackup()
 
 	if lexer.pos.Offset >= len(lexer.input) {
 		return EOF, backup
@@ -186,7 +186,7 @@ func (lexer *Lexer) Peek() rune {
 	return rune
 }
 
-func (lexer *Lexer) MakeBackup() BackupFn {
+func (lexer *Lexer) NewBackup() BackupFn {
 	backupPos := lexer.pos
 	return func() {
 		lexer.pos = backupPos
@@ -246,7 +246,7 @@ func (lexer *Lexer) Accept(valid string) (bool, BackupFn, error) {
 }
 
 func (lexer *Lexer) AcceptString(valid string) (bool, BackupFn, error) {
-	backup := lexer.MakeBackup()
+	backup := lexer.NewBackup()
 	for _, r := range valid {
 		if ok, _, err := lexer.Accept(string(r)); err != nil {
 			return false, nil, err
@@ -273,7 +273,7 @@ func (lexer *Lexer) AcceptFn(valid func(rune) bool) (bool, BackupFn, error) {
 // AcceptRun does not return an error when encountering EOF.
 // Instead it just ends the run so that an EOF may be accepted afterwards.
 func (lexer *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = lexer.MakeBackup()
+	backup = lexer.NewBackup()
 
 	didConsumeRunes = false
 	for {
@@ -290,7 +290,7 @@ func (lexer *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup Backup
 // AcceptFnRun does not return an error when encountering EOF.
 // Instead it just ends the run so that an EOF may be accepted afterwards.
 func (lexer *Lexer) AcceptRunFn(predicate func(rune) bool) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = lexer.MakeBackup()
+	backup = lexer.NewBackup()
 
 	didConsumeRunes = false
 	for {
@@ -305,7 +305,7 @@ func (lexer *Lexer) AcceptRunFn(predicate func(rune) bool) (didConsumeRunes bool
 }
 
 func (lexer *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = lexer.MakeBackup()
+	backup = lexer.NewBackup()
 
 	didConsumeRunes = false
 	for {

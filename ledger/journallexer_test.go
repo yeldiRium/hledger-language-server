@@ -14,7 +14,7 @@ import (
 func TestJournalLexer(t *testing.T) {
 	filename := "testFile"
 	runLexerWithFilename := func(input string) (*lexing.Lexer, []participleLexer.Token, error) {
-		lexerDefinition := ledger.MakeJournalLexer()
+		lexerDefinition := ledger.NewJournalLexer()
 		lexer, err := lexerDefinition.LexString(filename, input)
 		if err != nil {
 			return nil, nil, err
@@ -86,14 +86,14 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
 			t.Run("accepts an inline comment indicator using a semicolon and emits a token.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := lexing.MakeLexer(
+				lexer := lexing.NewLexer(
 					filename,
 					lexerDefinition,
 					"  ; foo",
@@ -110,14 +110,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("accepts an inline comment indicator using a hash.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := lexing.MakeLexer(
+				lexer := lexing.NewLexer(
 					filename,
 					lexerDefinition,
 					"  # foo",
@@ -134,14 +134,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("does not accept things not starting with spaces.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := lexing.MakeLexer(
+				lexer := lexing.NewLexer(
 					filename,
 					lexerDefinition,
 					"foo",
@@ -158,14 +158,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("does not accept inline comments starting with anything else.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := lexing.MakeLexer(
+				lexer := lexing.NewLexer(
 					filename,
 					lexerDefinition,
 					"  foo",
@@ -182,14 +182,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("returns an error upon encountering EOF.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := lexing.MakeLexer(
+				lexer := lexing.NewLexer(
 					filename,
 					lexerDefinition,
 					" ",

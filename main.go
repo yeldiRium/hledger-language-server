@@ -70,7 +70,7 @@ func (h Handler) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	columnNumber := int(params.Position.Character + 1)
 
 	filename := params.TextDocument.URI.Filename()
-	parser := ledger.MakeJournalParser()
+	parser := ledger.NewJournalParser()
 	fileHandle, err := os.Open(filename)
 	defer fileHandle.Close()
 	if err != nil {

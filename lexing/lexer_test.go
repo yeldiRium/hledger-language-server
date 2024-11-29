@@ -25,14 +25,14 @@ func TestLexer(t *testing.T) {
 
 	t.Run("LexerDefinition", func(t *testing.T) {
 		t.Run("contains a default list of symbols.", func(t *testing.T) {
-			definition := lexing.MakeLexerDefinition(nil, []string{})
+			definition := lexing.NewLexerDefinition(nil, []string{})
 
 			assert.Equal(t, participleLexer.TokenType(0), definition.Symbol("Error"))
 			assert.Equal(t, participleLexer.TokenType(1), definition.Symbol("EOF"))
 		})
 
 		t.Run("can be extended with custom symbols that are automatically enumerated.", func(t *testing.T) {
-			definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
+			definition := lexing.NewLexerDefinition(nil, []string{"foo", "bar"})
 
 			assert.Equal(t, participleLexer.TokenType(0), definition.Symbol("Error"))
 			assert.Equal(t, participleLexer.TokenType(1), definition.Symbol("EOF"))
@@ -42,14 +42,14 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Symbol", func(t *testing.T) {
 			t.Run("returns a TokenType for the given token name.", func(t *testing.T) {
-				definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
+				definition := lexing.NewLexerDefinition(nil, []string{"foo", "bar"})
 
 				symbol := definition.Symbol("foo")
 				assert.Equal(t, participleLexer.TokenType(3), symbol)
 			})
 
 			t.Run("panics if the token name is unknown.", func(t *testing.T) {
-				definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
+				definition := lexing.NewLexerDefinition(nil, []string{"foo", "bar"})
 
 				assert.Panics(t, func() {
 					definition.Symbol("unknown")
@@ -70,7 +70,7 @@ func TestLexer(t *testing.T) {
 					return rootState
 				}
 
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					rootState,
 					[]string{
 						"Char",
@@ -98,7 +98,7 @@ func TestLexer(t *testing.T) {
 					return nil
 				}
 
-				lexerDefinition := lexing.MakeLexerDefinition(
+				lexerDefinition := lexing.NewLexerDefinition(
 					rootState,
 					[]string{
 						"Char",
@@ -119,8 +119,8 @@ func TestLexer(t *testing.T) {
 	t.Run("Lexer", func(t *testing.T) {
 		prepareLexer := func(input string, tokenNames []string, rootState lexing.StateFn) (lexer *lexing.Lexer, filename string) {
 			filename = "testFile"
-			definition := lexing.MakeLexerDefinition(rootState, tokenNames)
-			lexer = lexing.MakeLexer(
+			definition := lexing.NewLexerDefinition(rootState, tokenNames)
+			lexer = lexing.NewLexer(
 				filename,
 				definition,
 				input,
