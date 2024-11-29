@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
-	"github.com/alecthomas/participle/v2/lexer"
+	participleLexer "github.com/alecthomas/participle/v2/lexer"
 )
 
 type Journal struct {
@@ -22,8 +22,8 @@ type AccountDirective struct {
 func (*AccountDirective) value() {}
 
 type AccountName struct {
-	Pos    lexer.Position
-	EndPos lexer.Position
+	Pos    participleLexer.Position
+	EndPos participleLexer.Position
 
 	Segments []string `parser:"@AccountNameSegment (':' @AccountNameSegment)*"`
 }

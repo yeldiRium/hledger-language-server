@@ -1,14 +1,16 @@
 package ledger
 
-import "github.com/alecthomas/participle/v2/lexer"
+import (
+	participleLexer "github.com/alecthomas/participle/v2/lexer"
+)
 
 func MakeLexer(
 	name string,
 	definition *LexerDefinition,
 	input string,
-	start lexer.Position,
-	pos lexer.Position,
-	tokens chan lexer.Token,
+	start participleLexer.Position,
+	pos participleLexer.Position,
+	tokens chan participleLexer.Token,
 ) *Lexer {
 	return &Lexer{
 		name,
@@ -20,10 +22,10 @@ func MakeLexer(
 	}
 }
 
-func (lexer *Lexer) Start() lexer.Position {
+func (lexer *Lexer) Start() participleLexer.Position {
 	return lexer.start
 }
 
-func (lexer *Lexer) Pos() lexer.Position {
+func (lexer *Lexer) Pos() participleLexer.Position {
 	return lexer.pos
 }

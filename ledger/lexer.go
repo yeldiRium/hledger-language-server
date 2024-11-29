@@ -7,12 +7,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/alecthomas/participle/v2/lexer"
+	participleLexer "github.com/alecthomas/participle/v2/lexer" 
 )
 
 const EOF = -1
 const (
-	symbolError lexer.TokenType = iota
+	symbolError participleLexer.TokenType = iota
 	symbolEOF
 
 	symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols
@@ -21,15 +21,15 @@ const (
 var ErrEof = fmt.Errorf("unexpected end of file")
 var ErrBof = fmt.Errorf("unexpected beginning of file")
 
-func extendSymbols(symbolNames []string) map[string]lexer.TokenType {
-	symbols := map[string]lexer.TokenType{
+func extendSymbols(symbolNames []string) map[string]participleLexer.TokenType {
+	symbols := map[string]participleLexer.TokenType{
 		"Error":       symbolError,
 		"EOF":         symbolEOF,
 		"placeholder": symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols,
 	}
 
 	for k, v := range symbolNames {
-		symbols[v] = lexer.TokenType(k + int(symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols) + 1)
+		symbols[v] = participleLexer.TokenType(k + int(symbolThisShouldAlwaysBeLastAndIsUsedForAddingMoreSymbols) + 1)
 	}
 
 	return symbols
@@ -48,7 +48,7 @@ type StateFn func(*Lexer) StateFn
 
 type LexerDefinition struct {
 	initialState StateFn
-	symbols      map[string]lexer.TokenType
+	symbols      map[string]participleLexer.TokenType
 }
 
 func (lexerDefinition *LexerDefinition) LexString(filename string, input string) (*Lexer, error) {
@@ -56,9 +56,9 @@ func (lexerDefinition *LexerDefinition) LexString(filename string, input string)
 		name:       filename,
 		definition: lexerDefinition,
 		input:      input,
-		start:      lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-		pos:        lexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-		tokens:     make(chan lexer.Token),
+		start:      participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		pos:        participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		tokens:     make(chan participleLexer.Token),
 	}
 
 	go l.run(lexerDefinition.initialState)
@@ -66,7 +66,7 @@ func (lexerDefinition *LexerDefinition) LexString(filename string, input string)
 	return l, nil
 }
 
-func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (lexer.Lexer, error) {
+func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (participleLexer.Lexer, error) {
 	input, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -75,11 +75,11 @@ func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (lexer
 	return lexerDefinition.LexString(filename, string(input))
 }
 
-func (lexerDefinition *LexerDefinition) Symbols() map[string]lexer.TokenType {
+func (lexerDefinition *LexerDefinition) Symbols() map[string]participleLexer.TokenType {
 	return lexerDefinition.symbols
 }
 
-func (lexerDefinition *LexerDefinition) Symbol(name string) lexer.TokenType {
+func (lexerDefinition *LexerDefinition) Symbol(name string) participleLexer.TokenType {
 	if t, ok := lexerDefinition.symbols[name]; ok {
 		return t
 	}
@@ -91,23 +91,23 @@ type Lexer struct {
 	name       string // used only for error reports
 	definition *LexerDefinition
 	input      string           // the string being lexed
-	start      lexer.Position   // start of the current token
-	pos        lexer.Position   // current position in the input
-	tokens     chan lexer.Token // channel of lexed tokens
+	start      participleLexer.Position   // start of the current token
+	pos        participleLexer.Position   // current position in the input
+	tokens     chan participleLexer.Token // channel of lexed tokens
 }
 
-func (l *Lexer) run(initialState StateFn) {
+func (lexer *Lexer) run(initialState StateFn) {
 	for state := initialState; state != nil; {
-		state = state(l)
+		state = state(lexer)
 	}
-	close(l.tokens)
+	close(lexer.tokens)
 }
 
-func (l *Lexer) Next() (lexer.Token, error) {
-	token, ok := <-l.tokens
+func (lexer *Lexer) Next() (participleLexer.Token, error) {
+	token, ok := <-lexer.tokens
 	if !ok {
-		return lexer.Token{
-			Type: lexer.EOF,
+		return participleLexer.Token{
+			Type: participleLexer.EOF,
 		}, nil
 	}
 
@@ -118,70 +118,70 @@ func (l *Lexer) Next() (lexer.Token, error) {
 	return token, nil
 }
 
-func (l *Lexer) Symbol(name string) lexer.TokenType {
-	return l.definition.Symbol(name)
+func (lexer *Lexer) Symbol(name string) participleLexer.TokenType {
+	return lexer.definition.Symbol(name)
 }
 
-func (l *Lexer) NextRune() (rune, BackupFn) {
-	backup := l.MakeBackup()
+func (lexer *Lexer) NextRune() (rune, BackupFn) {
+	backup := lexer.MakeBackup()
 
-	if l.pos.Offset >= len(l.input) {
+	if lexer.pos.Offset >= len(lexer.input) {
 		return EOF, backup
 	}
 
 	// TODO: handle potential encoding error
-	rune, _ := utf8.DecodeRuneInString(l.input[l.pos.Offset:])
-	l.pos.Advance(string(rune))
+	rune, _ := utf8.DecodeRuneInString(lexer.input[lexer.pos.Offset:])
+	lexer.pos.Advance(string(rune))
 
 	return rune, backup
 }
 
-func (l *Lexer) Peek() rune {
-	rune, backup := l.NextRune()
+func (lexer *Lexer) Peek() rune {
+	rune, backup := lexer.NextRune()
 	backup()
 	return rune
 }
 
-func (l *Lexer) MakeBackup() BackupFn {
-	backupPos := l.pos
+func (lexer *Lexer) MakeBackup() BackupFn {
+	backupPos := lexer.pos
 	return func() {
-		l.pos = backupPos
+		lexer.pos = backupPos
 	}
 }
 
-func (l *Lexer) Emit(t lexer.TokenType) {
-	l.tokens <- lexer.Token{
+func (lexer *Lexer) Emit(t participleLexer.TokenType) {
+	lexer.tokens <- participleLexer.Token{
 		Type:  t,
-		Value: l.input[l.start.Offset:l.pos.Offset],
-		Pos:   l.start,
+		Value: lexer.input[lexer.start.Offset:lexer.pos.Offset],
+		Pos:   lexer.start,
 	}
-	l.start = l.pos
+	lexer.start = lexer.pos
 }
 
-func (l *Lexer) Ignore() {
-	l.start = l.pos
+func (lexer *Lexer) Ignore() {
+	lexer.start = lexer.pos
 }
 
-func (l *Lexer) Error(err error) StateFn {
-	l.tokens <- lexer.Token{
+func (lexer *Lexer) Error(err error) StateFn {
+	lexer.tokens <- participleLexer.Token{
 		Type:  symbolError,
 		Value: err.Error(),
-		Pos:   l.start,
+		Pos:   lexer.start,
 	}
 	return nil
 }
 
-func (l *Lexer) Errorf(format string, args ...interface{}) StateFn {
-	l.tokens <- lexer.Token{
+func (lexer *Lexer) Errorf(format string, args ...interface{}) StateFn {
+	lexer.tokens <- participleLexer.Token{
 		Type:  symbolError,
 		Value: fmt.Sprintf(format, args...),
-		Pos:   l.start,
+		Pos:   lexer.start,
 	}
 	return nil
 }
 
-func (l *Lexer) AcceptEof() (bool, BackupFn) {
-	rune, backup := l.NextRune()
+func (lexer *Lexer) AcceptEof() (bool, BackupFn) {
+	rune, backup := lexer.NextRune()
 	if rune == EOF {
 		return true, backup
 	}
@@ -189,8 +189,8 @@ func (l *Lexer) AcceptEof() (bool, BackupFn) {
 	return false, backup
 }
 
-func (l *Lexer) Accept(valid string) (bool, BackupFn, error) {
-	rune, backup := l.NextRune()
+func (lexer *Lexer) Accept(valid string) (bool, BackupFn, error) {
+	rune, backup := lexer.NextRune()
 	if rune == EOF {
 		return false, nil, ErrEof
 	}
@@ -201,10 +201,10 @@ func (l *Lexer) Accept(valid string) (bool, BackupFn, error) {
 	return false, backup, nil
 }
 
-func (l *Lexer) AcceptString(valid string) (bool, BackupFn, error) {
-	backup := l.MakeBackup()
+func (lexer *Lexer) AcceptString(valid string) (bool, BackupFn, error) {
+	backup := lexer.MakeBackup()
 	for _, r := range valid {
-		if ok, _, err := l.Accept(string(r)); err != nil {
+		if ok, _, err := lexer.Accept(string(r)); err != nil {
 			return false, nil, err
 		} else if !ok {
 			backup()
@@ -214,8 +214,8 @@ func (l *Lexer) AcceptString(valid string) (bool, BackupFn, error) {
 	return true, backup, nil
 }
 
-func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, BackupFn, error) {
-	rune, backup := l.NextRune()
+func (lexer *Lexer) AcceptFn(valid func(rune) bool) (bool, BackupFn, error) {
+	rune, backup := lexer.NextRune()
 	if rune == EOF {
 		return false, nil, ErrEof
 	}
@@ -228,12 +228,12 @@ func (l *Lexer) AcceptFn(valid func(rune) bool) (bool, BackupFn, error) {
 
 // AcceptRun does not return an error when encountering EOF.
 // Instead it just ends the run so that an EOF may be accepted afterwards.
-func (l *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = l.MakeBackup()
+func (lexer *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup BackupFn, err error) {
+	backup = lexer.MakeBackup()
 
 	didConsumeRunes = false
 	for {
-		rune, backupOnce := l.NextRune()
+		rune, backupOnce := lexer.NextRune()
 		if strings.IndexRune(valid, rune) == -1 {
 			backupOnce()
 			break
@@ -245,12 +245,12 @@ func (l *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup BackupFn, 
 
 // AcceptFnRun does not return an error when encountering EOF.
 // Instead it just ends the run so that an EOF may be accepted afterwards.
-func (l *Lexer) AcceptRunFn(predicate func(rune) bool) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = l.MakeBackup()
+func (lexer *Lexer) AcceptRunFn(predicate func(rune) bool) (didConsumeRunes bool, backup BackupFn, err error) {
+	backup = lexer.MakeBackup()
 
 	didConsumeRunes = false
 	for {
-		rune, backupOnce := l.NextRune()
+		rune, backupOnce := lexer.NextRune()
 		if !predicate(rune) {
 			backupOnce()
 			break
@@ -260,12 +260,12 @@ func (l *Lexer) AcceptRunFn(predicate func(rune) bool) (didConsumeRunes bool, ba
 	return didConsumeRunes, backup, nil
 }
 
-func (l *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup BackupFn, err error) {
-	backup = l.MakeBackup()
+func (lexer *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup BackupFn, err error) {
+	backup = lexer.MakeBackup()
 
 	didConsumeRunes = false
 	for {
-		rune, backupOnce := l.NextRune()
+		rune, backupOnce := lexer.NextRune()
 		if strings.IndexRune(invalid, rune) != -1 || rune == EOF {
 			backupOnce()
 			break
@@ -281,7 +281,7 @@ func (l *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup Backup
 // thus there is no invalid utf-8 in the input up until the
 // given offset.
 // Passing unchecked input may break this and result in a panic.
-func (l *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
+func (lexer *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
 	offset := fromOffset
 	rune := rune(-1)
 	iterations := 0
@@ -295,7 +295,7 @@ func (l *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
 			panic("tried to parse unicode rune for more than four bytes, this should never happen")
 		}
 
-		rune, _ = utf8.DecodeRuneInString(l.input[offset:])
+		rune, _ = utf8.DecodeRuneInString(lexer.input[offset:])
 		if rune != utf8.RuneError {
 			break
 		}
@@ -304,11 +304,11 @@ func (l *Lexer) PeekBackwards(fromOffset int) (rune, int, error) {
 	return rune, offset, nil
 }
 
-func (l *Lexer) AssertAfter(valid string) bool {
-	if l.pos.Offset <= 0 {
+func (lexer *Lexer) AssertAfter(valid string) bool {
+	if lexer.pos.Offset <= 0 {
 		return false
 	}
-	rune, _, err := l.PeekBackwards(l.pos.Offset)
+	rune, _, err := lexer.PeekBackwards(lexer.pos.Offset)
 	if err != nil {
 		panic(err)
 	}
@@ -319,6 +319,6 @@ func (l *Lexer) AssertAfter(valid string) bool {
 	return false
 }
 
-func (l *Lexer) AssertAtStart() bool {
-	return l.pos.Offset == 0
+func (lexer *Lexer) AssertAtStart() bool {
+	return lexer.pos.Offset == 0
 }

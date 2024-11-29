@@ -4,40 +4,40 @@ import (
 	"strings"
 )
 
-func lexRoot(l *Lexer) StateFn {
-	if ok, _ := l.AcceptEof(); ok {
+func lexRoot(lexer *Lexer) StateFn {
+	if ok, _ := lexer.AcceptEof(); ok {
 		return nil
 	}
-	if ok, _, _ := l.Accept("\n"); ok {
-		l.Emit(l.Symbol("Newline"))
+	if ok, _, _ := lexer.Accept("\n"); ok {
+		lexer.Emit(lexer.Symbol("Newline"))
 		return lexRoot
 	}
-	if ok, _, err := l.AcceptString("account"); err != nil {
-		l.Error(err)
+	if ok, _, err := lexer.AcceptString("account"); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("AccountDirective"))
-		l.AcceptRun(" ")
-		l.Emit(l.Symbol("Whitespace"))
+		lexer.Emit(lexer.Symbol("AccountDirective"))
+		lexer.AcceptRun(" ")
+		lexer.Emit(lexer.Symbol("Whitespace"))
 		return lexAccountDirective
 	}
 
-	if l.AssertAfter("\n") || l.AssertAtStart() {
-		if ok, _, err := l.AcceptRun(" "); err != nil {
-			l.Error(err)
+	if lexer.AssertAfter("\n") || lexer.AssertAtStart() {
+		if ok, _, err := lexer.AcceptRun(" "); err != nil {
+			lexer.Error(err)
 			return nil
 		} else if ok {
-			l.Emit(l.Symbol("Indent"))
+			lexer.Emit(lexer.Symbol("Indent"))
 
-			if ok, _, err := AcceptCommentIndicator(l); err != nil {
-				l.Error(err)
+			if ok, _, err := AcceptCommentIndicator(lexer); err != nil {
+				lexer.Error(err)
 				return nil
 			} else if ok {
 				return lexRoot // TODO: Handle comment
 			}
 
-			if ok, _, err := l.AcceptString("format"); err != nil {
-				l.Error(err)
+			if ok, _, err := lexer.AcceptString("format"); err != nil {
+				lexer.Error(err)
 				return nil
 			} else if ok {
 				return lexRoot // TODO: Handle commodity directive format subdirective
@@ -47,26 +47,26 @@ func lexRoot(l *Lexer) StateFn {
 		}
 	}
 
-	if didConsumeRunes, _, err := l.AcceptUntil("\n"); err != nil {
-		l.Error(err)
+	if didConsumeRunes, _, err := lexer.AcceptUntil("\n"); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if didConsumeRunes {
-		l.Emit(l.Symbol("Garbage"))
+		lexer.Emit(lexer.Symbol("Garbage"))
 	}
 	return lexRoot
 }
 
-func lexAccountDirective(l *Lexer) StateFn {
-	if ok, _, err := AcceptAccountName(l); err != nil {
-		l.Error(err)
+func lexAccountDirective(lexer *Lexer) StateFn {
+	if ok, _, err := AcceptAccountName(lexer); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if !ok {
-		l.Errorf("expected account name")
+		lexer.Errorf("expected account name")
 		return nil
 	}
 
-	if ok, _, err := AcceptInlineCommentIndicator(l); err != nil {
-		l.Error(err)
+	if ok, _, err := AcceptInlineCommentIndicator(lexer); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
 		return lexRoot // TODO: Handle inline comment
@@ -75,22 +75,22 @@ func lexAccountDirective(l *Lexer) StateFn {
 	return lexRoot
 }
 
-func AcceptAccountName(l *Lexer) (didConsumeAccountNameSegments bool, backup BackupFn, err error) {
-	backup = l.MakeBackup()
+func AcceptAccountName(lexer *Lexer) (didConsumeAccountNameSegments bool, backup BackupFn, err error) {
+	backup = lexer.MakeBackup()
 	didConsumeAccountNameSegments = false
 
 	for {
-		if ok, _, err := l.Accept(":"); err != nil {
-			l.Error(err)
+		if ok, _, err := lexer.Accept(":"); err != nil {
+			lexer.Error(err)
 			return false, nil, err
 		} else if ok {
-			l.Emit(l.Symbol("AccountNameSeparator"))
+			lexer.Emit(lexer.Symbol("AccountNameSeparator"))
 			continue
 		}
 
-		if didConsumeRunes, _, err := l.AcceptRunFn(func(r rune) bool {
+		if didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
 			if r == ' ' {
-				nextRune := l.Peek()
+				nextRune := lexer.Peek()
 				if nextRune == ' ' {
 					return false
 				}
@@ -100,7 +100,7 @@ func AcceptAccountName(l *Lexer) (didConsumeAccountNameSegments bool, backup Bac
 		}); err != nil {
 			return false, nil, err
 		} else if didConsumeRunes {
-			l.Emit(l.Symbol("AccountNameSegment"))
+			lexer.Emit(lexer.Symbol("AccountNameSegment"))
 			didConsumeAccountNameSegments = true
 			continue
 		}
@@ -111,62 +111,62 @@ func AcceptAccountName(l *Lexer) (didConsumeAccountNameSegments bool, backup Bac
 	return didConsumeAccountNameSegments, backup, nil
 }
 
-func lexPosting(l *Lexer) StateFn {
-	if ok, _, err := l.Accept("!*"); err != nil {
-		l.Error(err)
+func lexPosting(lexer *Lexer) StateFn {
+	if ok, _, err := lexer.Accept("!*"); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("PostingStatusIndicator"))
-		if ok, _, _ := l.Accept(" "); !ok {
-			l.Errorf("expected whitespace after posting status indicator")
+		lexer.Emit(lexer.Symbol("PostingStatusIndicator"))
+		if ok, _, _ := lexer.Accept(" "); !ok {
+			lexer.Errorf("expected whitespace after posting status indicator")
 		}
-		l.Emit(l.Symbol("Whitespace"))
+		lexer.Emit(lexer.Symbol("Whitespace"))
 	}
 
-	if ok, _, err := l.Accept("("); err != nil {
-		l.Error(err)
+	if ok, _, err := lexer.Accept("("); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("AccountNameDelimiter"))
-	} else if ok, _, err := l.Accept("["); err != nil {
-		l.Error(err)
+		lexer.Emit(lexer.Symbol("AccountNameDelimiter"))
+	} else if ok, _, err := lexer.Accept("["); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("AccountNameDelimiter"))
+		lexer.Emit(lexer.Symbol("AccountNameDelimiter"))
 	}
 
 	// TODO: maybe handle whitespace before account name?
-	if ok, _, err := AcceptAccountName(l); err != nil {
-		l.Error(err)
+	if ok, _, err := AcceptAccountName(lexer); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if !ok {
-		l.Errorf("expected account name")
+		lexer.Errorf("expected account name")
 		return nil
 	}
 	// TODO: maybe handle whitespace after account name?
 
-	if ok, _, err := l.Accept(")"); err != nil {
-		l.Error(err)
+	if ok, _, err := lexer.Accept(")"); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("AccountNameDelimiter"))
-	} else if ok, _, err := l.Accept("]"); err != nil {
-		l.Error(err)
+		lexer.Emit(lexer.Symbol("AccountNameDelimiter"))
+	} else if ok, _, err := lexer.Accept("]"); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("AccountNameDelimiter"))
+		lexer.Emit(lexer.Symbol("AccountNameDelimiter"))
 	}
 
-	if ok, _, err := l.AcceptRun(" "); err != nil {
-		l.Error(err)
+	if ok, _, err := lexer.AcceptRun(" "); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("Whitespace"))
+		lexer.Emit(lexer.Symbol("Whitespace"))
 	}
 
-	if ok, _, err := l.AcceptRunFn(func(r rune) bool {
+	if ok, _, err := lexer.AcceptRunFn(func(r rune) bool {
 		if r == ' ' {
-			nextRune := l.Peek()
+			nextRune := lexer.Peek()
 			if nextRune == ' ' {
 				return false
 			}
@@ -174,14 +174,14 @@ func lexPosting(l *Lexer) StateFn {
 		}
 		return strings.IndexRune("()[]\n", r) == -1
 	}); err != nil {
-		l.Error(err)
+		lexer.Error(err)
 		return nil
 	} else if ok {
-		l.Emit(l.Symbol("Amount"))
+		lexer.Emit(lexer.Symbol("Amount"))
 	}
 
-	if ok, _, err := AcceptInlineCommentIndicator(l); err != nil {
-		l.Error(err)
+	if ok, _, err := AcceptInlineCommentIndicator(lexer); err != nil {
+		lexer.Error(err)
 		return nil
 	} else if ok {
 		return lexRoot // TODO: Handle inline comment
@@ -190,24 +190,24 @@ func lexPosting(l *Lexer) StateFn {
 	return lexRoot
 }
 
-func AcceptCommentIndicator(l *Lexer) (bool, BackupFn, error) {
-	return l.Accept("#;")
+func AcceptCommentIndicator(lexer *Lexer) (bool, BackupFn, error) {
+	return lexer.Accept("#;")
 }
 
-func AcceptInlineCommentIndicator(l *Lexer) (bool, BackupFn, error) {
-	backup := l.MakeBackup()
+func AcceptInlineCommentIndicator(lexer *Lexer) (bool, BackupFn, error) {
+	backup := lexer.MakeBackup()
 
-	if ok, _, err := l.AcceptString("  ;"); err != nil {
+	if ok, _, err := lexer.AcceptString("  ;"); err != nil {
 		return false, nil, err
 	} else if ok {
-		l.Emit(l.Symbol("InlineCommentIndicator"))
+		lexer.Emit(lexer.Symbol("InlineCommentIndicator"))
 		return true, backup, nil
 	}
 
-	if ok, _, err := l.AcceptString("  #"); err != nil {
+	if ok, _, err := lexer.AcceptString("  #"); err != nil {
 		return false, nil, err
 	} else if ok {
-		l.Emit(l.Symbol("InlineCommentIndicator"))
+		lexer.Emit(lexer.Symbol("InlineCommentIndicator"))
 		return true, backup, nil
 	}
 
