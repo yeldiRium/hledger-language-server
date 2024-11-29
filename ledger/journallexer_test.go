@@ -6,12 +6,14 @@ import (
 
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/yeldiRium/hledger-language-server/ledger"
+	"github.com/yeldiRium/hledger-language-server/lexing"
 )
 
 func TestJournalLexer(t *testing.T) {
 	filename := "testFile"
-	runLexerWithFilename := func(input string) (*ledger.Lexer, []participleLexer.Token, error) {
+	runLexerWithFilename := func(input string) (*lexing.Lexer, []participleLexer.Token, error) {
 		lexerDefinition := ledger.MakeJournalLexer()
 		lexer, err := lexerDefinition.LexString(filename, input)
 		if err != nil {
@@ -29,7 +31,7 @@ func TestJournalLexer(t *testing.T) {
 
 		return lexer, tokens, nil
 	}
-	runLexer := func(input string) (*ledger.Lexer, []participleLexer.Token, error) {
+	runLexer := func(input string) (*lexing.Lexer, []participleLexer.Token, error) {
 		return runLexerWithFilename(input)
 	}
 
@@ -37,7 +39,7 @@ func TestJournalLexer(t *testing.T) {
 		Type  string
 		Value string
 	}
-	makeTokens := func(lexer *ledger.Lexer, miniTokens []MiniToken) []participleLexer.Token {
+	makeTokens := func(lexer *lexing.Lexer, miniTokens []MiniToken) []participleLexer.Token {
 		tokens := make([]participleLexer.Token, len(miniTokens))
 		pos := participleLexer.Position{Filename: filename, Offset: 0, Line: 1, Column: 1}
 		for i, token := range miniTokens {
@@ -84,14 +86,14 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
 			t.Run("accepts an inline comment indicator using a semicolon and emits a token.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := ledger.MakeLexerDefinition(
-					func(lexer *ledger.Lexer) ledger.StateFn { return nil },
+				lexerDefinition := lexing.MakeLexerDefinition(
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := ledger.MakeLexer(
+				lexer := lexing.MakeLexer(
 					filename,
 					lexerDefinition,
 					"  ; foo",
@@ -108,14 +110,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("accepts an inline comment indicator using a hash.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := ledger.MakeLexerDefinition(
-					func(lexer *ledger.Lexer) ledger.StateFn { return nil },
+				lexerDefinition := lexing.MakeLexerDefinition(
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := ledger.MakeLexer(
+				lexer := lexing.MakeLexer(
 					filename,
 					lexerDefinition,
 					"  # foo",
@@ -132,14 +134,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("does not accept things not starting with spaces.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := ledger.MakeLexerDefinition(
-					func(lexer *ledger.Lexer) ledger.StateFn { return nil },
+				lexerDefinition := lexing.MakeLexerDefinition(
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := ledger.MakeLexer(
+				lexer := lexing.MakeLexer(
 					filename,
 					lexerDefinition,
 					"foo",
@@ -156,14 +158,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("does not accept inline comments starting with anything else.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := ledger.MakeLexerDefinition(
-					func(lexer *ledger.Lexer) ledger.StateFn { return nil },
+				lexerDefinition := lexing.MakeLexerDefinition(
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := ledger.MakeLexer(
+				lexer := lexing.MakeLexer(
 					filename,
 					lexerDefinition,
 					"  foo",
@@ -180,14 +182,14 @@ func TestJournalLexer(t *testing.T) {
 
 			t.Run("returns an error upon encountering EOF.", func(t *testing.T) {
 				filename := filename
-				lexerDefinition := ledger.MakeLexerDefinition(
-					func(lexer *ledger.Lexer) ledger.StateFn { return nil },
+				lexerDefinition := lexing.MakeLexerDefinition(
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
 				)
-				lexer := ledger.MakeLexer(
+				lexer := lexing.MakeLexer(
 					filename,
 					lexerDefinition,
 					" ",
@@ -197,7 +199,7 @@ func TestJournalLexer(t *testing.T) {
 				)
 
 				_, _, err := ledger.AcceptInlineCommentIndicator(lexer)
-				assert.ErrorIs(t, err, ledger.ErrEof)
+				assert.ErrorIs(t, err, lexing.ErrEof)
 			})
 		})
 	})
@@ -249,15 +251,15 @@ func TestJournalLexer(t *testing.T) {
 			assert.Greater(t, len(tokens), 7)
 			assert.Equal(
 				t,
-				[]participleLexer.Token{
-					{Type: lexer.Symbol("AccountDirective"), Value: "account", Pos: participleLexer.Position{Filename: filename, Offset: 0, Line: 1, Column: 1}},
-					{Type: lexer.Symbol("Whitespace"), Value: " ", Pos: participleLexer.Position{Filename: filename, Offset: 7, Line: 1, Column: 8}},
-					{Type: lexer.Symbol("AccountNameSegment"), Value: "assets", Pos: participleLexer.Position{Filename: filename, Offset: 8, Line: 1, Column: 9}},
-					{Type: lexer.Symbol("AccountNameSeparator"), Value: ":", Pos: participleLexer.Position{Filename: filename, Offset: 14, Line: 1, Column: 15}},
-					{Type: lexer.Symbol("AccountNameSegment"), Value: "Cash", Pos: participleLexer.Position{Filename: filename, Offset: 15, Line: 1, Column: 16}},
-					{Type: lexer.Symbol("AccountNameSeparator"), Value: ":", Pos: participleLexer.Position{Filename: filename, Offset: 19, Line: 1, Column: 20}},
-					{Type: lexer.Symbol("AccountNameSegment"), Value: "Checking", Pos: participleLexer.Position{Filename: filename, Offset: 20, Line: 1, Column: 21}},
-				},
+				makeTokens(lexer, []MiniToken{
+					{Type: "AccountDirective", Value: "account"},
+					{Type: "Whitespace", Value: " "},
+					{Type: "AccountNameSegment", Value: "assets"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Cash"},
+					{Type: "AccountNameSeparator", Value: ":"},
+					{Type: "AccountNameSegment", Value: "Checking"},
+				}),
 				tokens[0:7],
 			)
 		})
@@ -290,21 +292,6 @@ account expenses:Food:Groceries
 				tokens,
 			)
 		})
-
-		//t.Run("Parses a file containing an account directive followed by an inline comment", func(t *testing.T) {
-		//	testParserWithFileContent(t, "account assets:Cash:Checking  ; hehe\n", &Journal{
-		//		Entries: []Entry{
-		//			&AccountDirective{
-		//				AccountName: &AccountName{
-		//					Segments: []string{"assets", "Cash", "Checking"},
-		//				},
-		//				Comment: &InlineComment{
-		//					String: "hehe",
-		//				},
-		//			},
-		//		},
-		//	})
-		//})
 	})
 
 	t.Run("Posting", func(t *testing.T) {

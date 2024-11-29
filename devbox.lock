@@ -49,6 +49,54 @@
         }
       }
     },
+    "gotools@latest": {
+      "last_modified": "2024-11-16T04:25:12Z",
+      "resolved": "github:NixOS/nixpkgs/34a626458d686f1b58139620a8b2793e9e123bba#gotools",
+      "source": "devbox-search",
+      "version": "0.25.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gln9g7av683v32vx5kvdgcf1f3vfxf5f-gotools-0.25.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/gln9g7av683v32vx5kvdgcf1f3vfxf5f-gotools-0.25.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/l7kls58pi8qc8gwkqrypf6iacyhwlm8z-gotools-0.25.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/l7kls58pi8qc8gwkqrypf6iacyhwlm8z-gotools-0.25.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/yssxkkcvrn2dvlnv7mvd4jsk4f2h0zqf-gotools-0.25.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/yssxkkcvrn2dvlnv7mvd4jsk4f2h0zqf-gotools-0.25.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8nk07x74jnmcz83vbz4kj2x6wb8ds6sm-gotools-0.25.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8nk07x74jnmcz83vbz4kj2x6wb8ds6sm-gotools-0.25.0"
+        }
+      }
+    },
     "wget@latest": {
       "last_modified": "2024-11-03T14:18:04Z",
       "resolved": "github:NixOS/nixpkgs/4ae2e647537bcdbb82265469442713d066675275#wget",

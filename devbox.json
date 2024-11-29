@@ -2,7 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.10.7/.schema/devbox.schema.json",
   "packages": [
     "go@latest",
-    "wget@latest"
+    "wget@latest",
+    "gotools@latest"
   ],
   "env": {
     "NIX_HARDENING_ENABLE": ""
@@ -16,6 +17,9 @@
       "make:diagrams:assets": [
         "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.js -O ledger/diagrams/railroad-diagrams.js",
         "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.css -O ledger/diagrams/railroad-diagrams.css"
+      ],
+      "run:docs": [
+        "godoc"
       ]
     }
   }

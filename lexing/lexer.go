@@ -1,4 +1,4 @@
-package ledger
+package lexing
 
 import (
 	"errors"
@@ -35,6 +35,12 @@ func extendSymbols(symbolNames []string) map[string]participleLexer.TokenType {
 	return symbols
 }
 
+// MakeLexerDefinition creates a new lexer definition and sets a starting state
+// as well as creating a list of token types that can be emitted by derived
+// lexers.
+// The list of token types is created programatically so that tests and checks
+// for certain types do not rely on magic numbers but explicitly defined symbol
+// names.
 func MakeLexerDefinition(initialState StateFn, symbolNames []string) *LexerDefinition {
 	definition := &LexerDefinition{
 		initialState: initialState,
@@ -51,6 +57,8 @@ type LexerDefinition struct {
 	symbols      map[string]participleLexer.TokenType
 }
 
+// LexString instantiates a new lexer, which can then be used to iterate over
+// the input and emit tokens.
 func (lexerDefinition *LexerDefinition) LexString(filename string, input string) (*Lexer, error) {
 	l := &Lexer{
 		name:       filename,
@@ -66,6 +74,11 @@ func (lexerDefinition *LexerDefinition) LexString(filename string, input string)
 	return l, nil
 }
 
+// Lex reads from the given reader and instantiates a new lexer, which can then
+// be used to iterate over the input and emit tokens.
+// Note that the input from reader is read all at once, so this won't work with
+// infinite inputs or very large files.
+// Part of the `Definition` Interface from participle: https://pkg.go.dev/github.com/alecthomas/participle/v2/lexer#Definition
 func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (participleLexer.Lexer, error) {
 	input, err := io.ReadAll(r)
 	if err != nil {
@@ -75,6 +88,8 @@ func (lexerDefinition *LexerDefinition) Lex(filename string, r io.Reader) (parti
 	return lexerDefinition.LexString(filename, string(input))
 }
 
+// Symbols gives access to all defined symbol types.
+// Part of the `Definition` Interface from participle: https://pkg.go.dev/github.com/alecthomas/participle/v2/lexer#Definition
 func (lexerDefinition *LexerDefinition) Symbols() map[string]participleLexer.TokenType {
 	return lexerDefinition.symbols
 }
@@ -96,11 +111,40 @@ type Lexer struct {
 	tokens     chan participleLexer.Token // channel of lexed tokens
 }
 
+// MakeLexer creates a new lexer instance by hand.
+// You should never have to use this except when testing your own Accept... or
+// Assert... functions.
+func MakeLexer(
+	name string,
+	definition *LexerDefinition,
+	input string,
+	start participleLexer.Position,
+	pos participleLexer.Position,
+	tokens chan participleLexer.Token,
+) *Lexer {
+	return &Lexer{
+		name,
+		definition,
+		input,
+		start,
+		pos,
+		tokens,
+	}
+}
+
 func (lexer *Lexer) run(initialState StateFn) {
 	for state := initialState; state != nil; {
 		state = state(lexer)
 	}
 	close(lexer.tokens)
+}
+
+func (lexer *Lexer) Start() participleLexer.Position {
+	return lexer.start
+}
+
+func (lexer *Lexer) Pos() participleLexer.Position {
+	return lexer.pos
 }
 
 func (lexer *Lexer) Next() (participleLexer.Token, error) {

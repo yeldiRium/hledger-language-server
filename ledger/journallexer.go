@@ -2,9 +2,11 @@ package ledger
 
 import (
 	"strings"
+
+	"github.com/yeldiRium/hledger-language-server/lexing"
 )
 
-func lexRoot(lexer *Lexer) StateFn {
+func lexRoot(lexer *lexing.Lexer) lexing.StateFn {
 	if ok, _ := lexer.AcceptEof(); ok {
 		return nil
 	}
@@ -56,7 +58,7 @@ func lexRoot(lexer *Lexer) StateFn {
 	return lexRoot
 }
 
-func lexAccountDirective(lexer *Lexer) StateFn {
+func lexAccountDirective(lexer *lexing.Lexer) lexing.StateFn {
 	if ok, _, err := AcceptAccountName(lexer); err != nil {
 		lexer.Error(err)
 		return nil
@@ -75,7 +77,7 @@ func lexAccountDirective(lexer *Lexer) StateFn {
 	return lexRoot
 }
 
-func AcceptAccountName(lexer *Lexer) (didConsumeAccountNameSegments bool, backup BackupFn, err error) {
+func AcceptAccountName(lexer *lexing.Lexer) (didConsumeAccountNameSegments bool, backup lexing.BackupFn, err error) {
 	backup = lexer.MakeBackup()
 	didConsumeAccountNameSegments = false
 
@@ -111,7 +113,7 @@ func AcceptAccountName(lexer *Lexer) (didConsumeAccountNameSegments bool, backup
 	return didConsumeAccountNameSegments, backup, nil
 }
 
-func lexPosting(lexer *Lexer) StateFn {
+func lexPosting(lexer *lexing.Lexer) lexing.StateFn {
 	if ok, _, err := lexer.Accept("!*"); err != nil {
 		lexer.Error(err)
 		return nil
@@ -190,11 +192,11 @@ func lexPosting(lexer *Lexer) StateFn {
 	return lexRoot
 }
 
-func AcceptCommentIndicator(lexer *Lexer) (bool, BackupFn, error) {
+func AcceptCommentIndicator(lexer *lexing.Lexer) (bool, lexing.BackupFn, error) {
 	return lexer.Accept("#;")
 }
 
-func AcceptInlineCommentIndicator(lexer *Lexer) (bool, BackupFn, error) {
+func AcceptInlineCommentIndicator(lexer *lexing.Lexer) (bool, lexing.BackupFn, error) {
 	backup := lexer.MakeBackup()
 
 	if ok, _, err := lexer.AcceptString("  ;"); err != nil {
@@ -214,8 +216,8 @@ func AcceptInlineCommentIndicator(lexer *Lexer) (bool, BackupFn, error) {
 	return false, backup, nil
 }
 
-func MakeJournalLexer() *LexerDefinition {
-	return MakeLexerDefinition(lexRoot, []string{
+func MakeJournalLexer() *lexing.LexerDefinition {
+	return lexing.MakeLexerDefinition(lexRoot, []string{
 		"Garbage",
 		"Newline",
 		"Whitespace",

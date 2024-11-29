@@ -1,4 +1,4 @@
-package ledger_test
+package lexing_test
 
 import (
 	"strings"
@@ -6,7 +6,8 @@ import (
 
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
-	"github.com/yeldiRium/hledger-language-server/ledger"
+
+	"github.com/yeldiRium/hledger-language-server/lexing"
 )
 
 func TestLexer(t *testing.T) {
@@ -24,14 +25,14 @@ func TestLexer(t *testing.T) {
 
 	t.Run("LexerDefinition", func(t *testing.T) {
 		t.Run("contains a default list of symbols.", func(t *testing.T) {
-			definition := ledger.MakeLexerDefinition(nil, []string{})
+			definition := lexing.MakeLexerDefinition(nil, []string{})
 
 			assert.Equal(t, participleLexer.TokenType(0), definition.Symbol("Error"))
 			assert.Equal(t, participleLexer.TokenType(1), definition.Symbol("EOF"))
 		})
 
 		t.Run("can be extended with custom symbols that are automatically enumerated.", func(t *testing.T) {
-			definition := ledger.MakeLexerDefinition(nil, []string{"foo", "bar"})
+			definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
 
 			assert.Equal(t, participleLexer.TokenType(0), definition.Symbol("Error"))
 			assert.Equal(t, participleLexer.TokenType(1), definition.Symbol("EOF"))
@@ -41,14 +42,14 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Symbol", func(t *testing.T) {
 			t.Run("returns a TokenType for the given token name.", func(t *testing.T) {
-				definition := ledger.MakeLexerDefinition(nil, []string{"foo", "bar"})
+				definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
 
 				symbol := definition.Symbol("foo")
 				assert.Equal(t, participleLexer.TokenType(3), symbol)
 			})
 
 			t.Run("panics if the token name is unknown.", func(t *testing.T) {
-				definition := ledger.MakeLexerDefinition(nil, []string{"foo", "bar"})
+				definition := lexing.MakeLexerDefinition(nil, []string{"foo", "bar"})
 
 				assert.Panics(t, func() {
 					definition.Symbol("unknown")
@@ -58,8 +59,8 @@ func TestLexer(t *testing.T) {
 
 		t.Run("LexString", func(t *testing.T) {
 			t.Run("runs the lexer until the end of the input is reached.", func(t *testing.T) {
-				var rootState ledger.StateFn
-				rootState = func(lexer *ledger.Lexer) ledger.StateFn {
+				var rootState lexing.StateFn
+				rootState = func(lexer *lexing.Lexer) lexing.StateFn {
 					ok, _ := lexer.AcceptEof()
 					if ok {
 						return nil
@@ -69,7 +70,7 @@ func TestLexer(t *testing.T) {
 					return rootState
 				}
 
-				lexerDefinition := ledger.MakeLexerDefinition(
+				lexerDefinition := lexing.MakeLexerDefinition(
 					rootState,
 					[]string{
 						"Char",
@@ -91,13 +92,13 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("runs the lexer until an error is encountered.", func(t *testing.T) {
-				var rootState ledger.StateFn
-				rootState = func(lexer *ledger.Lexer) ledger.StateFn {
+				var rootState lexing.StateFn
+				rootState = func(lexer *lexing.Lexer) lexing.StateFn {
 					lexer.Errorf("something went wrong")
 					return nil
 				}
 
-				lexerDefinition := ledger.MakeLexerDefinition(
+				lexerDefinition := lexing.MakeLexerDefinition(
 					rootState,
 					[]string{
 						"Char",
@@ -116,10 +117,10 @@ func TestLexer(t *testing.T) {
 	})
 
 	t.Run("Lexer", func(t *testing.T) {
-		prepareLexer := func(input string, tokenNames []string, rootState ledger.StateFn) (lexer *ledger.Lexer, filename string) {
+		prepareLexer := func(input string, tokenNames []string, rootState lexing.StateFn) (lexer *lexing.Lexer, filename string) {
 			filename = "testFile"
-			definition := ledger.MakeLexerDefinition(rootState, tokenNames)
-			lexer = ledger.MakeLexer(
+			definition := lexing.MakeLexerDefinition(rootState, tokenNames)
+			lexer = lexing.MakeLexer(
 				filename,
 				definition,
 				input,
@@ -254,7 +255,7 @@ func TestLexer(t *testing.T) {
 				lexer, _ := prepareLexer("", []string{}, nil)
 
 				_, _, err := lexer.Accept("t")
-				assert.ErrorIs(t, err, ledger.ErrEof)
+				assert.ErrorIs(t, err, lexing.ErrEof)
 			})
 		})
 
@@ -401,7 +402,7 @@ func TestLexer(t *testing.T) {
 				lexer, _ := prepareLexer("te", []string{}, nil)
 
 				_, _, err := lexer.AcceptString("test")
-				assert.ErrorIs(t, err, ledger.ErrEof)
+				assert.ErrorIs(t, err, lexing.ErrEof)
 			})
 		})
 
