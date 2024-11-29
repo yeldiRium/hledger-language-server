@@ -40,5 +40,7 @@
     - [ ] support finding an AST token by position in a file
 
 ## language server
+- [ ] cache files and track changes in memory
+- [ ] parse watched files on change and keep their ASTs in memory
 - [ ] code completion for account names
     - [ ] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists
