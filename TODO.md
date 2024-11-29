@@ -8,7 +8,7 @@
     - [ ] support commodity directive (`commodity`)
     - [ ] support alias directive (`alias`)
     - [ ] support decimal-mark directive (`decimal-mark`)
-    - [ ] support include directive (`include`)
+    - [x] support include directive (`include`)
     - [ ] support market price directive (`P`)
     - [ ] support default commodity directive (`D`)
     - [ ] support default year directive (`Y`)
