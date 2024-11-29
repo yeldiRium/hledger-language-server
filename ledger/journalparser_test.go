@@ -33,24 +33,6 @@ func TestJournalParser(t *testing.T) {
 
 		return tokens, ast, err
 	}
-	pruneMetadataFromAst := func(ast *ledger.Journal) {
-		for _, entry := range ast.Entries {
-			switch entry := entry.(type) {
-			case *ledger.AccountDirective:
-				entry.AccountName.Pos = participleLexer.Position{}
-				entry.AccountName.EndPos = participleLexer.Position{}
-			case *ledger.RealPosting:
-				entry.AccountName.Pos = participleLexer.Position{}
-				entry.AccountName.EndPos = participleLexer.Position{}
-			case *ledger.VirtualPosting:
-				entry.AccountName.Pos = participleLexer.Position{}
-				entry.AccountName.EndPos = participleLexer.Position{}
-			case *ledger.VirtualBalancedPosting:
-				entry.AccountName.Pos = participleLexer.Position{}
-				entry.AccountName.EndPos = participleLexer.Position{}
-			}
-		}
-	}
 
 	t.Run("General format", func(t *testing.T) {
 		t.Run("Parses a file containing only newlines.", func(t *testing.T) {

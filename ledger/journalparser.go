@@ -62,7 +62,9 @@ type VirtualBalancedPosting struct {
 
 func (*VirtualBalancedPosting) value() {}
 
-func NewJournalParser() *participle.Parser[Journal] {
+type JournalParser = participle.Parser[Journal]
+
+func NewJournalParser() *JournalParser {
 	lexer := NewJournalLexer()
 	parser, err := participle.Build[Journal](
 		participle.Lexer(lexer),
