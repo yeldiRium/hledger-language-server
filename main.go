@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"strings"
 	"time"
 	"unicode"
@@ -80,8 +81,12 @@ func (h Handler) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
+	resolvedJournal, err := ledger.ResolveIncludes(journal, parser, os.DirFS(path.Dir(filename)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve includes: %w", err)
+	}
 
-	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(journal, lineNumber, columnNumber)
+	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, lineNumber, columnNumber)
 
 	if accountNameUnderCursor == nil {
 		return &protocol.Hover{
