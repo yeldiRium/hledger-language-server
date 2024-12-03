@@ -17,7 +17,8 @@ func main() {
 	logger, _ := zap.NewDevelopmentConfig().Build()
 	connection := jsonrpc2.NewConn(jsonrpc2.NewStream(&rwCloser{os.Stdin, os.Stdout}))
 
-	handler, ctx, err := server.NewServer(context.Background(), protocol.ServerDispatcher(connection, logger), logger)
+	client := protocol.ClientDispatcher(connection, logger)
+	handler, ctx, err := server.NewServer(context.Background(), protocol.ServerDispatcher(connection, logger), client, logger)
 	if err != nil {
 		logger.Sugar().Fatalf("while initializing handler: %w", err)
 	}
