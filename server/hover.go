@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"go.lsp.dev/protocol"
 
@@ -17,23 +18,25 @@ func (h server) Hover(ctx context.Context, params *protocol.HoverParams) (*proto
 	lineNumber := int(params.Position.Line + 1)
 	columnNumber := int(params.Position.Character + 1)
 
-	filename := params.TextDocument.URI.Filename()
+	fileName := params.TextDocument.URI.Filename()
+	fileName = strings.TrimPrefix(fileName, "file://")
+
 	parser := ledger.NewJournalParser()
-	fileHandle, err := os.Open(filename)
+	fileHandle, err := os.Open(fileName)
 	defer fileHandle.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	journal, err := parser.Parse(filename, fileHandle)
+	journal, err := parser.Parse(fileName, fileHandle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
-	resolvedJournal, err := ledger.ResolveIncludes(journal, parser, os.DirFS(path.Dir(filename)))
+	resolvedJournal, err := ledger.ResolveIncludes(journal, parser, os.DirFS(path.Dir(fileName)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve includes: %w", err)
 	}
 
-	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, lineNumber, columnNumber)
+	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, fileName, lineNumber, columnNumber)
 
 	if accountNameUnderCursor == nil {
 		return &protocol.Hover{
