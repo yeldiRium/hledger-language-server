@@ -8,7 +8,7 @@ import (
 )
 
 type Journal struct {
-	Entries []Entry `parser:"(@@ | Indent? Newline | Indent? Garbage)*"`
+	Entries []Entry `parser:"(@@ | Indent? (Newline | Garbage))*"`
 }
 
 type Entry interface {
@@ -70,6 +70,7 @@ func NewJournalParser() *JournalParser {
 		participle.Lexer(lexer),
 		participle.UseLookahead(3),
 		participle.Union[Entry](&IncludeDirective{}, &AccountDirective{}, &RealPosting{}, &VirtualPosting{}, &VirtualBalancedPosting{}),
+		participle.Elide("Whitespace"),
 	)
 	if err != nil {
 		panic(err)

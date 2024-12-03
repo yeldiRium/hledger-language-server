@@ -161,6 +161,9 @@ commodity EUR
 2024-11-25 Payee | transaction reason
     (virtual:posting)      300 €
     [balanced:virtual:posting]   = 15 €
+
+2024-12-01 Payee | posting with trailing whitespace
+    expenses:Groceries           
 `)
 			pruneMetadataFromAst(ast)
 
@@ -211,6 +214,12 @@ commodity EUR
 								Segments: []string{"balanced", "virtual", "posting"},
 							},
 							Amount: "= 15 €",
+						},
+						&ledger.RealPosting{
+							AccountName: &ledger.AccountName{
+								Segments: []string{"expenses", "Groceries"},
+							},
+							Amount: "",
 						},
 					},
 				},
