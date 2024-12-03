@@ -187,8 +187,9 @@ func lexPosting(lexer *lexing.Lexer) lexing.StateFn {
 
 	if ok, _, err := lexer.AcceptRunFn(func(r rune) bool {
 		if r == ' ' {
-			nextRune := lexer.Peek()
-			if nextRune == ' ' {
+			ok, backup, _ := lexer.AcceptString(" ;")
+			if ok {
+				backup()
 				return false
 			}
 			return true

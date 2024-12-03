@@ -437,6 +437,23 @@ account expenses:Food:Groceries
 			assert.Equal(t, expectedTokens, tokens)
 		})
 
+		t.Run("lexes a posting with a currency conversion that includes a double space.", func(t *testing.T) {
+			lexer, tokens, err := runLexer("    expenses:Groceries   -1,234.56 BTC @  1,234.50 €\n")
+
+			expectedTokens := makeTokens(lexer, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "AccountNameSegment", Value: "expenses"},
+				{Type: "AccountNameSeparator", Value: ":"},
+				{Type: "AccountNameSegment", Value: "Groceries"},
+				{Type: "Whitespace", Value: "   "},
+				{Type: "Amount", Value: "-1,234.56 BTC @  1,234.50 €"},
+				{Type: "Newline", Value: "\n"},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, expectedTokens, tokens)
+		})
+
 		t.Run("fails on invalid inputs.", func(t *testing.T) {
 			invalidInputs := []string{
 				"    !expenses:Groceries\n",
