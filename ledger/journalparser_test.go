@@ -144,9 +144,13 @@ include someLong/Pathof/things.journal
 include also/there-are-no/inlinecomments/after.includes  ; this is part of the path
 
 account assets:Cash:Checking
+    ; indented comment
 account expenses:Gro ce:ries  ; hehe
 
 payee Some Cool Person
+
+commodity EUR
+    format 1,000.00 €
 
 2024-11-25 ! (code) Payee | transaction reason  ; inline transction comment
     expenses:Groceries      1,234.56 €

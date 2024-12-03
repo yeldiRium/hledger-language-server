@@ -476,6 +476,7 @@ include someLong/Pathof/things.journal
 include   also/there-are-no/inlinecomments/after.includes  ; this is part of the path
 
 account assets:Cash:Checking
+    ; indented comment
 account expenses:Gro ce:ries  ; hehe
 
 payee Some Cool Person
@@ -510,6 +511,9 @@ commodity EUR
 				{Type: "AccountNameSegment", Value: "Cash"},
 				{Type: "AccountNameSeparator", Value: ":"},
 				{Type: "AccountNameSegment", Value: "Checking"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Indent", Value: "    "},
+				{Type: "Garbage", Value: "; indented comment"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "AccountDirective", Value: "account"},
 				{Type: "Whitespace", Value: " "},

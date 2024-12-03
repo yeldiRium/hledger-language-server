@@ -8,7 +8,7 @@ import (
 )
 
 type Journal struct {
-	Entries []Entry `parser:"(@@ | Newline | Garbage)*"`
+	Entries []Entry `parser:"(@@ | Newline | Indent? Garbage)*"`
 }
 
 type Entry interface {
