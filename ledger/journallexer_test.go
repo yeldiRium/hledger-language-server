@@ -80,6 +80,15 @@ func TestJournalLexer(t *testing.T) {
 				{Type: "Newline", Value: "\n"},
 			}), tokens)
 		})
+
+		t.Run("Lexes newlines with whitespace.", func(t *testing.T) {
+			lexer, tokens, err := runLexer("    \n")
+			assert.NoError(t, err)
+			assert.Equal(t, makeTokens(lexer, []MiniToken{
+				{Type: "Indent", Value: "    "},
+				{Type: "Newline", Value: "\n"},
+			}), tokens)
+		})
 	})
 
 	t.Run("Helpers", func(t *testing.T) {
@@ -488,6 +497,8 @@ account expenses:Food:Groceries
 		t.Run("Lexes a journal file containing many different directives, postings and comments", func(t *testing.T) {
 			lexer, tokens, err := runLexer(`; This is a cool journal file
 # It includes many things
+; This next line is empty, but contains whitespace:
+    
 
 include someLong/Pathof/things.journal
 include   also/there-are-no/inlinecomments/after.includes  ; this is part of the path
@@ -505,11 +516,16 @@ commodity EUR
     expenses:Groceries      1,234.56 €
     assets:Cash:Checking   -1,234.56 €  ; inline comment
 `)
+			assert.NoError(t, err)
 
 			expectedTokens := makeTokens(lexer, []MiniToken{
 				{Type: "Garbage", Value: "; This is a cool journal file"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Garbage", Value: "# It includes many things"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Garbage", Value: "; This next line is empty, but contains whitespace:"},
+				{Type: "Newline", Value: "\n"},
+				{Type: "Indent", Value: "    "},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "IncludeDirective", Value: "include"},
@@ -574,7 +590,6 @@ commodity EUR
 				{Type: "Newline", Value: "\n"},
 			})
 
-			assert.NoError(t, err)
 			assert.Equal(t, expectedTokens, tokens)
 		})
 	})

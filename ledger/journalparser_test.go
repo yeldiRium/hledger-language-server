@@ -139,6 +139,8 @@ func TestJournalParser(t *testing.T) {
 			_, ast, err := runParser(
 				`; This is a cool journal file
 # It includes many things
+; This next line is empty, but contains whitespace:
+    
 
 include someLong/Pathof/things.journal
 include also/there-are-no/inlinecomments/after.includes  ; this is part of the path

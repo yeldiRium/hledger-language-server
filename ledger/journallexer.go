@@ -42,6 +42,14 @@ func lexRoot(lexer *lexing.Lexer) lexing.StateFn {
 		} else if ok {
 			lexer.Emit(lexer.Symbol("Indent"))
 
+			if ok, _, err := lexer.Accept("\n"); err != nil {
+				lexer.Error(err)
+				return nil
+			} else if ok {
+				lexer.Emit(lexer.Symbol("Newline"))
+				return lexRoot
+			}
+
 			if ok, _, err := AcceptCommentIndicator(lexer); err != nil {
 				lexer.Error(err)
 				return nil
