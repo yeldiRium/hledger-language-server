@@ -40,7 +40,7 @@
     - [ ] support finding an AST token by position in a file
 
 ## language server
-- [ ] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
+- [x] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
 - [ ] cache files and track changes in memory
 - [ ] parse watched files on change and keep their ASTs in memory
 - [ ] code completion for account names
