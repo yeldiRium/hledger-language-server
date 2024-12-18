@@ -1,19 +1,27 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
 
 	"go.lsp.dev/protocol"
+	"go.uber.org/zap"
 
 	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func (h server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
-	h.logger.Sugar().Infof("hovering over %s in line %d at position %d", params.TextDocument.URI, params.Position.Line, params.Position.Character)
+	h.logger.Info(
+		"textDocument/hover",
+		zap.String("DocumentURI", string(params.TextDocument.URI)),
+		zap.Uint32("line", params.Position.Line),
+		zap.Uint32("character", params.Position.Character),
+	)
 
 	lineNumber := int(params.Position.Line + 1)
 	columnNumber := int(params.Position.Character + 1)
@@ -21,13 +29,28 @@ func (h server) Hover(ctx context.Context, params *protocol.HoverParams) (*proto
 	fileName := params.TextDocument.URI.Filename()
 	fileName = strings.TrimPrefix(fileName, "file://")
 
-	parser := ledger.NewJournalParser()
-	fileHandle, err := os.Open(fileName)
-	defer fileHandle.Close()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+	fileContent, ok := h.cache.GetFile(params.TextDocument.URI)
+	var fileReader io.Reader
+	if !ok {
+		h.logger.Warn(
+			"textDocument/hover target not found in cache, opening from file system",
+			zap.String("DocumentURI", string(params.TextDocument.URI)),
+		)
+		fileReader, err := os.Open(fileName)
+		defer fileReader.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to open file: %w", err)
+		}
+	} else {
+		h.logger.Info(
+			"textDocument/hover target found in cache",
+			zap.String("DocumentURI", string(params.TextDocument.URI)),
+		)
+		fileReader = bytes.NewBuffer([]byte(fileContent))
 	}
-	journal, err := parser.Parse(fileName, fileHandle)
+
+	parser := ledger.NewJournalParser()
+	journal, err := parser.Parse(fileName, fileReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
