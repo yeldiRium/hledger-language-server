@@ -2,47 +2,19 @@ package server
 
 import (
 	"context"
-	"sync"
 
 	"go.lsp.dev/protocol"
-	"go.lsp.dev/uri"
 	"go.uber.org/zap"
+
+	"github.com/yeldiRium/hledger-language-server/cache"
 )
 
 type server struct {
 	protocol.Server
 	client protocol.Client
 	logger *zap.Logger
-	cache *cache
+	cache *cache.Cache
 }
-
-type cache struct {
-	sync.RWMutex
-	files map[uri.URI]string
-}
-
-func newCache() *cache {
-	return &cache{
-		files: make(map[uri.URI]string),
-	}
-}
-
-func (c *cache) GetFile(documentURI uri.URI) (string, bool) {
-	c.RLock()
-	defer c.RUnlock()
-
-	fileContent, ok := c.files[documentURI]
-	return fileContent, ok
-}
-
-func (c *cache) AddFile(documentURI uri.URI, content string) {
-	c.Lock()
-	defer c.Unlock()
-
-	c.files[documentURI] = content
-}
-
-// TODO: Remove document from cache when it is closed
 
 func (s server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
 	return &protocol.InitializeResult{
@@ -68,7 +40,7 @@ func (server server) Initialized(ctx context.Context, params *protocol.Initializ
 func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
 	server.logger.Info("textDocument/didOpen", zap.String("DocumentURI", string(params.TextDocument.URI)))
 
-	server.cache.AddFile(params.TextDocument.URI, params.TextDocument.Text)
+	server.cache.SetFile(params.TextDocument.URI, params.TextDocument.Text)
 
 	return nil
 }
@@ -77,7 +49,7 @@ func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTe
 	server.logger.Info("textDocument/didChange", zap.String("DocumentURI", string(params.TextDocument.URI)))
 
 	if len(params.ContentChanges) == 1 {
-	server.cache.AddFile(params.TextDocument.URI, params.ContentChanges[0].Text)
+	server.cache.SetFile(params.TextDocument.URI, params.ContentChanges[0].Text)
 	} else {
 		server.logger.Warn("textDocument/didChange got unexpected amount of content changes", zap.Int("count", len(params.ContentChanges)))
 	}
@@ -87,6 +59,9 @@ func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTe
 
 func (server server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
 	server.logger.Info("textDocument/didClose", zap.String("DocumentURI", string(params.TextDocument.URI)))
+
+	server.cache.DeleteFile(params.TextDocument.URI)
+
 	return nil
 }
 
@@ -104,7 +79,7 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 		Server: protocolServer,
 		client: protocolClient,
 		logger: logger,
-		cache: newCache(),
+		cache: cache.NewCache(),
 	}, ctx, nil
 }
 
