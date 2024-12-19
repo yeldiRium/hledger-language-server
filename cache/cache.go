@@ -33,5 +33,8 @@ func (c *Cache) SetFile(documentURI uri.URI, content string) {
 }
 
 func (c *Cache) DeleteFile(documentURI uri.URI) {
+	c.Lock()
+	defer c.Unlock()
+
 	delete(c.files, documentURI)
 }
