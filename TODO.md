@@ -42,6 +42,11 @@
 ## language server
 - [x] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
 - [ ] cache files and track changes in memory
-- [ ] parse watched files on change and keep their ASTs in memory
+    - [x] extract cache into dedicated module
+    - [ ] maybe add versioning?
+    - [x] test it
+    - optimizations:
+        - [ ] don't parse file to AST in each subsequent request, but once after adding the file to the cache
+        - [ ] don't parse the file immediately after adding it to the cache, but memoize the AST after it is requested the first time
 - [ ] code completion for account names
     - [ ] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists

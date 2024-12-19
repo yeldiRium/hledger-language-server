@@ -5,19 +5,30 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
+
+	"github.com/yeldiRium/hledger-language-server/cache"
 )
 
 type server struct {
 	protocol.Server
 	client protocol.Client
 	logger *zap.Logger
+	cache *cache.Cache
 }
 
-func (h server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
+func collectServerCapabilities() protocol.ServerCapabilities {
+	capabilities := protocol.ServerCapabilities{}
+	registerHoverCapabilities(&capabilities)
+	registerDocumentSyncCapabilities(&capabilities)
+	return capabilities
+}
+
+func (s server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
+	capabilities := collectServerCapabilities()
+	s.logger.Info("initialize", zap.Any("serverCapabilities", capabilities))
+
 	return &protocol.InitializeResult{
-		Capabilities: protocol.ServerCapabilities{
-			HoverProvider: true,
-		},
+		Capabilities: capabilities,
 		ServerInfo: &protocol.ServerInfo{
 			Name:    "hledger-language-server",
 			Version: "0.0.1",
@@ -25,7 +36,7 @@ func (h server) Initialize(ctx context.Context, params *protocol.InitializeParam
 	}, nil
 }
 
-func (server server) Initialized(ctx context.Context, parames *protocol.InitializedParams) error {
+func (server server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
 	server.client.ShowMessage(ctx, &protocol.ShowMessageParams{
 		Type: protocol.MessageTypeInfo,
 		Message: "Hello there!",
@@ -43,6 +54,11 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 	// by returning a new context with
 	// context.WithValue(context, ...)
 	// instead of just context
-	return server{Server: protocolServer, client: protocolClient, logger: logger}, ctx, nil
+	return server{
+		Server: protocolServer,
+		client: protocolClient,
+		logger: logger,
+		cache: cache.NewCache(),
+	}, ctx, nil
 }
 
