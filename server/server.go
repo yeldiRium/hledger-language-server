@@ -16,12 +16,19 @@ type server struct {
 	cache *cache.Cache
 }
 
+func collectServerCapabilities() protocol.ServerCapabilities {
+	capabilities := protocol.ServerCapabilities{}
+	registerHoverCapabilities(&capabilities)
+	registerDocumentSyncCapabilities(&capabilities)
+	return capabilities
+}
+
 func (s server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
+	capabilities := collectServerCapabilities()
+	s.logger.Info("initialize", zap.Any("serverCapabilities", capabilities))
+
 	return &protocol.InitializeResult{
-		Capabilities: protocol.ServerCapabilities{
-			HoverProvider: true,
-			TextDocumentSync: protocol.TextDocumentSyncKindFull,
-		},
+		Capabilities: capabilities,
 		ServerInfo: &protocol.ServerInfo{
 			Name:    "hledger-language-server",
 			Version: "0.0.1",
@@ -34,34 +41,6 @@ func (server server) Initialized(ctx context.Context, params *protocol.Initializ
 		Type: protocol.MessageTypeInfo,
 		Message: "Hello there!",
 	})
-	return nil
-}
-
-func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	server.logger.Info("textDocument/didOpen", zap.String("DocumentURI", string(params.TextDocument.URI)))
-
-	server.cache.SetFile(params.TextDocument.URI, params.TextDocument.Text)
-
-	return nil
-}
-
-func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	server.logger.Info("textDocument/didChange", zap.String("DocumentURI", string(params.TextDocument.URI)))
-
-	if len(params.ContentChanges) == 1 {
-	server.cache.SetFile(params.TextDocument.URI, params.ContentChanges[0].Text)
-	} else {
-		server.logger.Warn("textDocument/didChange got unexpected amount of content changes", zap.Int("count", len(params.ContentChanges)))
-	}
-
-	return nil
-}
-
-func (server server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
-	server.logger.Info("textDocument/didClose", zap.String("DocumentURI", string(params.TextDocument.URI)))
-
-	server.cache.DeleteFile(params.TextDocument.URI)
-
 	return nil
 }
 

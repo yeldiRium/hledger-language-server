@@ -15,6 +15,10 @@ import (
 	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
+func registerHoverCapabilities(serverCapabilities *protocol.ServerCapabilities) {
+	serverCapabilities.HoverProvider = true
+}
+
 func (h server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	h.logger.Info(
 		"textDocument/hover",
