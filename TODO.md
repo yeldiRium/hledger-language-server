@@ -44,7 +44,7 @@
 - [ ] cache files and track changes in memory
     - [x] extract cache into dedicated module
     - [ ] maybe add versioning?
-    - [ ] test it
+    - [x] test it
     - optimizations:
         - [ ] don't parse file to AST in each subsequent request, but once after adding the file to the cache
         - [ ] don't parse the file immediately after adding it to the cache, but memoize the AST after it is requested the first time
