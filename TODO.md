@@ -42,7 +42,7 @@
 ## language server
 - [x] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
 - [ ] cache files and track changes in memory
-    - [ ] extract cache into dedicated module
+    - [x] extract cache into dedicated module
     - [ ] maybe add versioning?
     - [ ] test it
     - optimizations:
