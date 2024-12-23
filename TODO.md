@@ -50,6 +50,10 @@
         - [ ] don't parse the file immediately after adding it to the cache, but memoize the AST after it is requested the first time
 - completion
     - account names
+        - [ ] cache list somehow
+            - since the underlying file changes while typing for the completion, this is difficult
+            - however, typing a new account name does not change the list since the currently type account name should be ignored anyway
+            - the question is: how do we recognize a cached list that is valid to use?
         - [ ] prefilter list
         - [ ] remove the currently hovered account name from the list, since it is incomplete
 - [ ] code completion for account names
