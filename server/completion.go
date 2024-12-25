@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/yeldiRium/hledger-language-server/ledger"
@@ -67,6 +68,11 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, fileName, lineNumber, columnNumber)
 
 	accountNames := ledger.AccountNames(resolvedJournal)
+	if accountNameUnderCursor != nil {
+		accountNames = slices.DeleteFunc(accountNames, func(accountName ledger.AccountName) bool {
+			return accountName.Equals(*accountNameUnderCursor)
+		})
+	}
 	matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, accountNameUnderCursor)
 
 	result := protocol.CompletionList{

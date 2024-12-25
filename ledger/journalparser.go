@@ -51,6 +51,18 @@ func (accountName *AccountName) Prefixes() []AccountName {
 	return prefixes
 }
 
+func (accountName AccountName) Equals(otherAccountName AccountName) bool {
+	if len(accountName.Segments) != len(otherAccountName.Segments) {
+		return false
+	}
+	for i, segment := range accountName.Segments {
+		if otherAccountName.Segments[i] != segment {
+			return false
+		}
+	}
+	return true
+}
+
 type RealPosting struct {
 	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
 	AccountName   *AccountName `parser:"@@"`
