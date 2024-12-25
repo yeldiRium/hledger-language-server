@@ -76,13 +76,23 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 	matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, accountNameUnderCursor)
 
 	result := protocol.CompletionList{
-		IsIncomplete: false,
+		IsIncomplete: true,
 		Items:        make([]protocol.CompletionItem, len(accountNames)),
 	}
 
 	for i, accountName := range matchingAccountNames {
 		result.Items[i] = protocol.CompletionItem{
 			Label: accountName.String(),
+			TextEdit: &protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line: uint32(accountNameUnderCursor.Pos.Line - 1),
+						Character: uint32(accountNameUnderCursor.Pos.Column - 1),
+					},
+					End: params.Position,
+				},
+				NewText: accountName.String(),
+			},
 		}
 	}
 
