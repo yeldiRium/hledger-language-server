@@ -13,13 +13,14 @@ type server struct {
 	protocol.Server
 	client protocol.Client
 	logger *zap.Logger
-	cache *cache.Cache
+	cache  *cache.Cache
 }
 
 func collectServerCapabilities() protocol.ServerCapabilities {
 	capabilities := protocol.ServerCapabilities{}
-	registerHoverCapabilities(&capabilities)
+	registerCompletionCapabilities(&capabilities)
 	registerDocumentSyncCapabilities(&capabilities)
+	registerHoverCapabilities(&capabilities)
 	return capabilities
 }
 
@@ -38,7 +39,7 @@ func (s server) Initialize(ctx context.Context, params *protocol.InitializeParam
 
 func (server server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
 	server.client.ShowMessage(ctx, &protocol.ShowMessageParams{
-		Type: protocol.MessageTypeInfo,
+		Type:    protocol.MessageTypeInfo,
 		Message: "Hello there!",
 	})
 	return nil
@@ -46,6 +47,18 @@ func (server server) Initialized(ctx context.Context, params *protocol.Initializ
 
 func (h server) Shutdown(ctx context.Context) error {
 	return nil
+}
+
+// Request catches all requests that are not handled otherwise. The main purpose
+// for this is to catche $/cancelRequest requests, which we do not handle yet.
+func (server server) Request(ctx context.Context, method string, params interface{}) (result interface{}, err error) {
+	server.logger.Debug(
+		"request",
+		zap.String("method", method),
+		zap.Any("params", params),
+	)
+
+	return struct{}{}, nil
 }
 
 func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClient protocol.Client, logger *zap.Logger) (server, context.Context, error) {
@@ -58,7 +71,6 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 		Server: protocolServer,
 		client: protocolClient,
 		logger: logger,
-		cache: cache.NewCache(),
+		cache:  cache.NewCache(),
 	}, ctx, nil
 }
-
