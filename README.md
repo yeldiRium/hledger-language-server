@@ -14,9 +14,6 @@ This is a hobby project to bring language support for [hledger](https://hledger.
 if not lspConfigurations.hledger_ls then
   lspConfigurations.hledger_ls = {
     default_config = {
-      -- production:
-      -- cmd = { "${lib.getExe pkgs.hledger-language-server}" },
-      -- development:
       cmd = { "/home/yeldir/querbeet/workspace/private/projects/hledger-language-server/hledger-language-server" },
       filetypes = { "ledger" },
       root_dir = require("lspconfig.util").root_pattern(".git", "*.journal"),
