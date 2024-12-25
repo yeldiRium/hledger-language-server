@@ -38,12 +38,12 @@
     - [ ] support indented additional comments
 - integration
     - [ ] support finding an AST token by position in a file
+        - works for account names
 
 ## language server
 - [x] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
 - [ ] cache files and track changes in memory
     - [x] extract cache into dedicated module
-    - [ ] maybe add versioning?
     - [x] test it
     - optimizations:
         - [ ] don't parse file to AST in each subsequent request, but once after adding the file to the cache
@@ -55,6 +55,6 @@
             - however, typing a new account name does not change the list since the currently type account name should be ignored anyway
             - the question is: how do we recognize a cached list that is valid to use?
         - [x] prefilter list
-        - [ ] remove the currently hovered account name from the list, since it is incomplete
-- [ ] code completion for account names
-    - [ ] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists
+            - [x] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists
+            - [ ] fuzzy match for each segment
+        - [x] remove the currently hovered account name from the list, since it is incomplete
