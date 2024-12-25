@@ -25,3 +25,7 @@ end
 add_lsp(lspconfig.hledger_ls, {})
 ```
 3. You might need to tell your editor to recognize ledger files.
+
+## Development
+
+If you want to make contributions, please first talk to me. For development and experimentation, clone the repo, install devbox, cd into the project directory and run `devbox shell`. Run `go build .` or `go test ./...` to get all dependencies and see that the setup works.
