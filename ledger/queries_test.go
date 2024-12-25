@@ -8,6 +8,49 @@ import (
 	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
+func TestAccountNames(t *testing.T) {
+	t.Run("returns an empty list for an empty journal.", func(t *testing.T) {
+		journal := &ledger.Journal{
+			Entries: []ledger.Entry{},
+		}
+
+		accountNames := ledger.AccountNames(journal)
+
+		assert.Equal(t, []ledger.AccountName{}, accountNames)
+	})
+
+	t.Run("returns a list of all account names and their prefixes in the journal.", func(t *testing.T) {
+		journal := &ledger.Journal{
+			Entries: []ledger.Entry{
+				&ledger.AccountDirective{
+					AccountName: &ledger.AccountName{
+						Segments: []string{"assets", "Cash", "Checking"},
+					},
+				},
+				&ledger.AccountDirective{
+					AccountName: &ledger.AccountName{
+						Segments: []string{"revenue", "Salary"},
+					},
+				},
+			},
+		}
+
+		accountNames := ledger.AccountNames(journal)
+
+		assert.ElementsMatch(
+			t,
+			[]ledger.AccountName{
+				{Segments: []string{"assets"}},
+				{Segments: []string{"assets", "Cash"}},
+				{Segments: []string{"assets", "Cash", "Checking"}},
+				{Segments: []string{"revenue"}},
+				{Segments: []string{"revenue", "Salary"}},
+			},
+			accountNames,
+		)
+	})
+}
+
 func TestFilterAccountNamesByPrefix(t *testing.T) {
 	t.Run("returns an empty list if no account names are given.", func(t *testing.T) {
 		accountNames := []ledger.AccountName{}
