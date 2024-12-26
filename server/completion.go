@@ -80,14 +80,21 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 		Items:        make([]protocol.CompletionItem, len(accountNames)),
 	}
 
+	replaceTextLine := params.Position.Line
+	replaceTextCharacter := params.Position.Character
+	if accountNameUnderCursor != nil {
+		replaceTextLine = uint32(accountNameUnderCursor.Pos.Line - 1)
+		replaceTextCharacter = uint32(accountNameUnderCursor.Pos.Column - 1)
+	}
+
 	for i, accountName := range matchingAccountNames {
 		result.Items[i] = protocol.CompletionItem{
 			Label: accountName.String(),
 			TextEdit: &protocol.TextEdit{
 				Range: protocol.Range{
 					Start: protocol.Position{
-						Line: uint32(accountNameUnderCursor.Pos.Line - 1),
-						Character: uint32(accountNameUnderCursor.Pos.Column - 1),
+						Line: replaceTextLine,
+						Character: replaceTextCharacter,
 					},
 					End: params.Position,
 				},
