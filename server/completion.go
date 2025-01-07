@@ -28,10 +28,9 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 		zap.String("documentURI", string(params.TextDocument.URI)),
 	)
 
-	fileName := params.TextDocument.URI.Filename()
-	fileName = strings.TrimPrefix(fileName, "file://")
+	fileName := getFileNameFromURI(params.TextDocument.URI)
 
-	fileContent, ok := server.cache.GetFile(params.TextDocument.URI)
+	fileContent, ok := server.cache.GetFile(fileName)
 	var fileReader io.Reader
 	if !ok {
 		// TODO: should never open from file system. always go via cache

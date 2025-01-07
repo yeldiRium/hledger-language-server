@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strings"
 
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -30,10 +29,9 @@ func (h server) Hover(ctx context.Context, params *protocol.HoverParams) (*proto
 	lineNumber := int(params.Position.Line + 1)
 	columnNumber := int(params.Position.Character + 1)
 
-	fileName := params.TextDocument.URI.Filename()
-	fileName = strings.TrimPrefix(fileName, "file://")
+	fileName := getFileNameFromURI(params.TextDocument.URI)
 
-	fileContent, ok := h.cache.GetFile(params.TextDocument.URI)
+	fileContent, ok := h.cache.GetFile(fileName)
 	var fileReader io.Reader
 	if !ok {
 		h.logger.Warn(
