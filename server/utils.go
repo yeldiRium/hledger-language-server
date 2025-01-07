@@ -6,9 +6,9 @@ import (
 	"go.lsp.dev/uri"
 )
 
-func getFileNameFromURI(documentURI uri.URI) string {
-	fileName := documentURI.Filename()
-	trimmedFileName := strings.TrimPrefix(fileName, "file://")
+func getFilePathFromURI(documentURI uri.URI) string {
+	filePath := documentURI.Filename()
+	trimmedFilePath := strings.TrimPrefix(filePath, "file://")
 
-	return trimmedFileName
+	return trimmedFilePath
 }

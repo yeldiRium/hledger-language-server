@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"os"
 
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -71,6 +72,7 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 		Server: protocolServer,
 		client: protocolClient,
 		logger: logger,
-		cache:  documentcache.NewCache(),
+		// TODO: set cache workspace based on project workspace reported from client
+		cache:  documentcache.NewCache(os.DirFS("/")),
 	}, ctx, nil
 }

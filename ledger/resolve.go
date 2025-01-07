@@ -1,16 +1,27 @@
 package ledger
 
-import "io/fs"
+import (
+	"io/fs"
+	"path"
+)
 
-func ResolveIncludes(journal *Journal, parser *JournalParser, fs fs.FS) (*Journal, error) {
+func ResolveIncludes(journal *Journal, journalFilePath string, parser *JournalParser, fs fs.FS) (*Journal, error) {
 	newJournal := Journal{
 		Entries: make([]Entry, 0),
 	}
+	journalDir := path.Dir(journalFilePath)
 
 	for _, entry := range journal.Entries {
 		switch entry := entry.(type) {
 		case *IncludeDirective:
 			includePath := entry.IncludePath
+			if !path.IsAbs(includePath) {
+				includePath = path.Join(journalDir, includePath)
+			}
+			if path.IsAbs(includePath) {
+				includePath = includePath[1:]
+			}
+
 			file, err := fs.Open(includePath)
 			if err != nil {
 				return nil, err
@@ -21,7 +32,7 @@ func ResolveIncludes(journal *Journal, parser *JournalParser, fs fs.FS) (*Journa
 			if err != nil {
 				return nil, err
 			}
-			resolvedIncludeJournal, err := ResolveIncludes(includeJournal, parser, fs)
+			resolvedIncludeJournal, err := ResolveIncludes(includeJournal, journalFilePath, parser, fs)
 			if err != nil {
 				return nil, err
 			}

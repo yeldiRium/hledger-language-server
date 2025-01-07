@@ -1,12 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"path"
 	"slices"
 	"strings"
 
@@ -28,43 +24,34 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 		zap.String("documentURI", string(params.TextDocument.URI)),
 	)
 
-	fileName := getFileNameFromURI(params.TextDocument.URI)
+	filePath := getFilePathFromURI(params.TextDocument.URI)
 
-	fileContent, ok := server.cache.GetFile(fileName)
-	var fileReader io.Reader
-	if !ok {
-		// TODO: should never open from file system. always go via cache
-		server.logger.Warn(
-			"textDocument/hover target not found in cache, opening from file system",
-			zap.String("DocumentURI", string(params.TextDocument.URI)),
-		)
-		fileReader, err := os.Open(fileName)
-		defer fileReader.Close()
-		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %w", err)
-		}
-	} else {
-		server.logger.Info(
-			"textDocument/hover target found in cache",
-			zap.String("DocumentURI", string(params.TextDocument.URI)),
-		)
-		fileReader = bytes.NewBuffer([]byte(fileContent))
+	file, err := server.cache.Open(filePath)
+	if err != nil {
+		server.logger.Warn("textDocument/completion target not found",
+			zap.String("fileName", filePath),
+			zap.Error(err))
+		return nil, fmt.Errorf("failed to find file to complete upon: %w", err)
 	}
+	server.logger.Debug("textDocument/completion target found",
+		zap.String("filePath", filePath))
 
 	parser := ledger.NewJournalParser()
-	journal, err := parser.Parse(fileName, fileReader)
+	journal, err := parser.Parse(filePath, file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
-	// TODO: resolves need to respect the cache
-	resolvedJournal, err := ledger.ResolveIncludes(journal, parser, os.DirFS(path.Dir(fileName)))
+
+	resolvedJournal, err := ledger.ResolveIncludes(journal, filePath, parser, server.cache)
 	if err != nil {
+		server.logger.Error("textDocument/completion failed to resolve includes",
+			zap.Error(err))
 		return nil, fmt.Errorf("failed to resolve includes: %w", err)
 	}
 
 	lineNumber := int(params.Position.Line + 1)
 	columnNumber := int(params.Position.Character + 1)
-	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, fileName, lineNumber, columnNumber)
+	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, filePath, lineNumber, columnNumber)
 
 	accountNames := ledger.AccountNames(resolvedJournal)
 	if accountNameUnderCursor != nil {
@@ -92,7 +79,7 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 			TextEdit: &protocol.TextEdit{
 				Range: protocol.Range{
 					Start: protocol.Position{
-						Line: replaceTextLine,
+						Line:      replaceTextLine,
 						Character: replaceTextCharacter,
 					},
 					End: params.Position,

@@ -12,23 +12,25 @@ import (
 
 func TestResolveIncludes(t *testing.T) {
 	t.Run("It resolves include directives and replaces them in the journal with their parsed content.", func(t *testing.T) {
-		includePath := "some/path/to/a.journal"
+		journalFilePath := "some/path/root.journal"
+		includedFilePath := "some/path/to/an/include.journal"
+
 		fs := fstest.MapFS{
-			includePath: &fstest.MapFile{
+			includedFilePath: &fstest.MapFile{
 				Data: []byte("account assets:Checking\n"),
 			},
 		}
 		inputJournal := &ledger.Journal{
 			Entries: []ledger.Entry{
 				&ledger.IncludeDirective{
-					IncludePath: includePath,
+					IncludePath: "to/an/include.journal",
 				},
 			},
 		}
 
 		parser := ledger.NewJournalParser()
 
-		resolvedJournal, err := ledger.ResolveIncludes(inputJournal, parser, fs)
+		resolvedJournal, err := ledger.ResolveIncludes(inputJournal, journalFilePath, parser, fs)
 
 		assert.NoError(t, err)
 		assert.Equal(t, &ledger.Journal{
@@ -36,16 +38,61 @@ func TestResolveIncludes(t *testing.T) {
 				&ledger.AccountDirective{
 					AccountName: &ledger.AccountName{
 						Pos: participleLexer.Position{
-							Filename: includePath,
-							Offset: 8,
-							Line: 1,
-							Column: 9,
+							Filename: includedFilePath,
+							Offset:   8,
+							Line:     1,
+							Column:   9,
 						},
 						EndPos: participleLexer.Position{
-							Filename: includePath,
-							Offset: 23,
-							Line: 1,
-							Column: 24,
+							Filename: includedFilePath,
+							Offset:   23,
+							Line:     1,
+							Column:   24,
+						},
+						Segments: []string{"assets", "Checking"},
+					},
+				},
+			},
+		}, resolvedJournal)
+	})
+
+	t.Run("It never uses absolute paths, instead it converts paths to be relative to a workspace, which currently is just /.", func(t *testing.T) {
+		journalFilePath := "some/path/root.journal"
+		includedFilePath := "some/path/to/an/include.journal"
+
+		fs := fstest.MapFS{
+			includedFilePath: &fstest.MapFile{
+				Data: []byte("account assets:Checking\n"),
+			},
+		}
+		inputJournal := &ledger.Journal{
+			Entries: []ledger.Entry{
+				&ledger.IncludeDirective{
+					IncludePath: "/some/path/to/an/include.journal",
+				},
+			},
+		}
+
+		parser := ledger.NewJournalParser()
+
+		resolvedJournal, err := ledger.ResolveIncludes(inputJournal, journalFilePath, parser, fs)
+
+		assert.NoError(t, err)
+		assert.Equal(t, &ledger.Journal{
+			Entries: []ledger.Entry{
+				&ledger.AccountDirective{
+					AccountName: &ledger.AccountName{
+						Pos: participleLexer.Position{
+							Filename: includedFilePath,
+							Offset:   8,
+							Line:     1,
+							Column:   9,
+						},
+						EndPos: participleLexer.Position{
+							Filename: includedFilePath,
+							Offset:   23,
+							Line:     1,
+							Column:   24,
 						},
 						Segments: []string{"assets", "Checking"},
 					},
