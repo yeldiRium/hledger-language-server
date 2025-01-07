@@ -52,6 +52,7 @@ func (h server) Shutdown(ctx context.Context) error {
 
 // Request catches all requests that are not handled otherwise. The main purpose
 // for this is to catche $/cancelRequest requests, which we do not handle yet.
+// TODO: handle cancelRequests so that each handler can opt-in to cancellation
 func (server server) Request(ctx context.Context, method string, params interface{}) (result interface{}, err error) {
 	server.logger.Debug(
 		"request",
