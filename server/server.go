@@ -6,14 +6,14 @@ import (
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
 
-	"github.com/yeldiRium/hledger-language-server/cache"
+	"github.com/yeldiRium/hledger-language-server/documentcache"
 )
 
 type server struct {
 	protocol.Server
 	client protocol.Client
 	logger *zap.Logger
-	cache  *cache.Cache
+	cache  *documentcache.DocumentCache
 }
 
 func collectServerCapabilities() protocol.ServerCapabilities {
@@ -71,6 +71,6 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 		Server: protocolServer,
 		client: protocolClient,
 		logger: logger,
-		cache:  cache.NewCache(),
+		cache:  documentcache.NewCache(),
 	}, ctx, nil
 }

@@ -1,4 +1,4 @@
-package cache_test
+package documentcache_test
 
 import (
 	"testing"
@@ -6,12 +6,12 @@ import (
 	"github.com/alecthomas/assert/v2"
 	"go.lsp.dev/uri"
 
-	"github.com/yeldiRium/hledger-language-server/cache"
+	"github.com/yeldiRium/hledger-language-server/documentcache"
 )
 
 func TestCache(t *testing.T) {
 	t.Run("can add and retrieve files", func(t *testing.T) {
-		cache := cache.NewCache()
+		cache := documentcache.NewCache()
 		cache.SetFile(uri.New("file:///tmp/foo.txt"), "file content")
 
 		content, ok := cache.GetFile(uri.New("file:///tmp/foo.txt"))
@@ -21,7 +21,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("returns w/e, false for files that are not cached", func(t *testing.T) {
-		cache := cache.NewCache()
+		cache := documentcache.NewCache()
 
 		_, ok := cache.GetFile(uri.New("file:///tmp/doesnt-exist"))
 
@@ -29,7 +29,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("can overwrite a cached file", func(t *testing.T) {
-		cache := cache.NewCache()
+		cache := documentcache.NewCache()
 		cache.SetFile(uri.New("file:///tmp/foo.txt"), "file content")
 		cache.SetFile(uri.New("file:///tmp/foo.txt"), "file content overwritten")
 
@@ -40,7 +40,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("can delete a cached file", func(t *testing.T) {
-		cache := cache.NewCache()
+		cache := documentcache.NewCache()
 		cache.SetFile(uri.New("file:///tmp/foo.txt"), "file content")
 		cache.DeleteFile(uri.New("file:///tmp/foo.txt"))
 

@@ -1,4 +1,4 @@
-package cache
+package documentcache
 
 import (
 	"sync"
@@ -6,18 +6,18 @@ import (
 	"go.lsp.dev/uri"
 )
 
-type Cache struct {
+type DocumentCache struct {
 	sync.RWMutex
 	files map[uri.URI]string
 }
 
-func NewCache() *Cache {
-	return &Cache{
+func NewCache() *DocumentCache {
+	return &DocumentCache{
 		files: make(map[uri.URI]string),
 	}
 }
 
-func (c *Cache) GetFile(documentURI uri.URI) (string, bool) {
+func (c *DocumentCache) GetFile(documentURI uri.URI) (string, bool) {
 	c.RLock()
 	defer c.RUnlock()
 
@@ -25,14 +25,14 @@ func (c *Cache) GetFile(documentURI uri.URI) (string, bool) {
 	return fileContent, ok
 }
 
-func (c *Cache) SetFile(documentURI uri.URI, content string) {
+func (c *DocumentCache) SetFile(documentURI uri.URI, content string) {
 	c.Lock()
 	defer c.Unlock()
 
 	c.files[documentURI] = content
 }
 
-func (c *Cache) DeleteFile(documentURI uri.URI) {
+func (c *DocumentCache) DeleteFile(documentURI uri.URI) {
 	c.Lock()
 	defer c.Unlock()
 
