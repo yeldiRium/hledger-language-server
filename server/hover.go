@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"os"
-	"path"
 
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
@@ -44,7 +42,7 @@ func (server server) Hover(ctx context.Context, params *protocol.HoverParams) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
-	resolvedJournal, err := ledger.ResolveIncludes(journal, filePath, parser, os.DirFS(path.Dir(filePath)))
+	resolvedJournal, err := ledger.ResolveIncludes(journal, filePath, parser, server.cache)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve includes: %w", err)
 	}
