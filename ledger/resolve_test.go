@@ -56,7 +56,7 @@ func TestResolveIncludes(t *testing.T) {
 		}, resolvedJournal)
 	})
 
-	t.Run("It never uses absolute paths, instead it converts paths to be relative to a workspace, which currently is just /.", func(t *testing.T) {
+	t.Run("It never uses absolute paths, instead it converts paths to be relative by removing the preceding /.", func(t *testing.T) {
 		journalFilePath := "some/path/root.journal"
 		includedFilePath := "some/path/to/an/include.journal"
 
