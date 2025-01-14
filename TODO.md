@@ -58,6 +58,8 @@
             - [x] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists
             - [ ] fuzzy match for each segment
         - [x] remove the currently hovered account name from the list, since it is incomplete
+- telemetry
+    - [ ] add statistics to the parser - how often is it used for which files?
 - testing
     - [ ] write tests for server handlers. might require abstracting them a bit
     - [ ] write benchmarks for the parser
