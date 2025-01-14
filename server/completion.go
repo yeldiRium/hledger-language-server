@@ -26,23 +26,15 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
 
-	file, err := server.cache.Open(filePath)
+	journal, err := server.parserCache.Parse(filePath)
 	if err != nil {
-		server.logger.Warn("textDocument/completion target not found",
-			zap.String("fileName", filePath),
+		server.logger.Warn("textDocument/completion failed to open/parse a journal",
+			zap.String("filePath", filePath),
 			zap.Error(err))
-		return nil, fmt.Errorf("failed to find file to complete upon: %w", err)
-	}
-	server.logger.Debug("textDocument/completion target found",
-		zap.String("filePath", filePath))
-
-	parser := ledger.NewJournalParser()
-	journal, err := parser.Parse(filePath, file)
-	if err != nil {
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
 
-	resolvedJournal, err := ledger.ResolveIncludes(journal, filePath, parser, server.cache)
+	resolvedJournal, err := server.parserCache.ResolveIncludes(journal, filePath)
 	if err != nil {
 		server.logger.Error("textDocument/completion failed to resolve includes",
 			zap.Error(err))

@@ -8,13 +8,15 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/yeldiRium/hledger-language-server/documentcache"
+	"github.com/yeldiRium/hledger-language-server/parsercache"
 )
 
 type server struct {
 	protocol.Server
-	client protocol.Client
-	logger *zap.Logger
-	cache  *documentcache.DocumentCache
+	client        protocol.Client
+	logger        *zap.Logger
+	documentCache *documentcache.DocumentCache
+	parserCache   *parsercache.ParserCache
 }
 
 func collectServerCapabilities() protocol.ServerCapabilities {
@@ -69,11 +71,13 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 	// by returning a new context with
 	// context.WithValue(context, ...)
 	// instead of just context
+	documentCache := documentcache.NewCache(os.DirFS("/"))
 	return server{
 		Server: protocolServer,
 		client: protocolClient,
 		logger: logger,
 		// TODO: set cache workspace based on project workspace reported from client
-		cache:  documentcache.NewCache(os.DirFS("/")),
+		documentCache: documentCache,
+		parserCache:   parsercache.NewCache(documentCache),
 	}, ctx, nil
 }

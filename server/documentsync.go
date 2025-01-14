@@ -14,9 +14,10 @@ func registerDocumentSyncCapabilities(serverCapabilities *protocol.ServerCapabil
 func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
 	server.logger.Info("textDocument/didOpen", zap.String("DocumentURI", string(params.TextDocument.URI)))
 
-	fileName := getFilePathFromURI(params.TextDocument.URI)
+	filePath := getFilePathFromURI(params.TextDocument.URI)
 
-	server.cache.SetFile(fileName, params.TextDocument.Text)
+	server.documentCache.SetFile(filePath, params.TextDocument.Text)
+	server.parserCache.Remove(filePath)
 
 	return nil
 }
@@ -24,10 +25,11 @@ func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDo
 func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	server.logger.Info("textDocument/didChange", zap.String("DocumentURI", string(params.TextDocument.URI)))
 
-	fileName := getFilePathFromURI(params.TextDocument.URI)
+	filePath := getFilePathFromURI(params.TextDocument.URI)
 
 	if len(params.ContentChanges) == 1 {
-	server.cache.SetFile(fileName, params.ContentChanges[0].Text)
+		server.documentCache.SetFile(filePath, params.ContentChanges[0].Text)
+		server.parserCache.Remove(filePath)
 	} else {
 		server.logger.Warn("textDocument/didChange got unexpected amount of content changes", zap.Int("count", len(params.ContentChanges)))
 	}
@@ -38,10 +40,9 @@ func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTe
 func (server server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
 	server.logger.Info("textDocument/didClose", zap.String("DocumentURI", string(params.TextDocument.URI)))
 
-	fileName := getFilePathFromURI(params.TextDocument.URI)
+	filePath := getFilePathFromURI(params.TextDocument.URI)
 
-	server.cache.DeleteFile(fileName)
+	server.documentCache.DeleteFile(filePath)
 
 	return nil
 }
-
