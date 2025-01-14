@@ -42,12 +42,12 @@
 
 ## language server
 - [x] bug: currently hover should give the account name under cursor, but it can't deal with the resolved includes
-- [ ] cache files and track changes in memory
+- [x] cache files and track changes in memory
     - [x] extract cache into dedicated module
     - [x] test it
     - optimizations:
-        - [ ] don't parse file to AST in each subsequent request, but once after adding the file to the cache
-        - [ ] don't parse the file immediately after adding it to the cache, but memoize the AST after it is requested the first time
+        - [x] don't parse file to AST in each subsequent request, but once after adding the file to the cache
+        - [x] don't parse the file immediately after adding it to the cache, but memoize the AST after it is requested the first time
 - completion
     - account names
         - [ ] cache list somehow
@@ -58,3 +58,11 @@
             - [x] based on prefix-syntax, e.g. `exp:Ca:Che` should suggest `expenses:Cash:Checking`, if it exists
             - [ ] fuzzy match for each segment
         - [x] remove the currently hovered account name from the list, since it is incomplete
+- testing
+    - [ ] write tests for server handlers. might require abstracting them a bit
+    - [ ] write benchmarks for the parser
+    - [ ] add a CI pipeline
+        - [ ] with QA (formatting, tests)
+        - [ ] with releases to
+            - [ ] github releases
+            - [ ] nix?
