@@ -75,30 +75,39 @@ func AccountNames(journal *Journal) []AccountName {
 
 // TODO: fuzzy match segments
 func FilterAccountNamesByPrefix(accountNames []AccountName, query *AccountName) []AccountName {
-	minLength := 1
-	maxLength := 1
-	if query != nil {
-		minLength = len(query.Segments)
-		maxLength = minLength + 1
-	}
-
 	matchingAccountNames := make([]AccountName, 0)
-accountNameLoop:
 	for _, accountName := range accountNames {
-		if len(accountName.Segments) > maxLength || len(accountName.Segments) < minLength {
-			continue
-		}
-
 		if query == nil {
-			matchingAccountNames = append(matchingAccountNames, accountName)
+			// If no query is given, we do not want to go into the matching logic at all.
+			// But we do want all account names with a length of 1.
+			if len(accountName.Segments) == 1 {
+				matchingAccountNames = append(matchingAccountNames, accountName)
+			}
 			continue
 		}
 
-		for i, segment := range query.Segments {
-			if _, ok := strings.CutPrefix(accountName.Segments[i], segment); !ok {
-				continue accountNameLoop
+		queryIndex := 0
+		accountNameIndex := 0
+		for queryIndex < len(query.Segments) && accountNameIndex < len(accountName.Segments) {
+			accountNameSegment := accountName.Segments[accountNameIndex]
+			querySegment := query.Segments[queryIndex]
+
+			if _, ok := strings.CutPrefix(accountNameSegment, querySegment); ok {
+				queryIndex += 1
 			}
+			accountNameIndex += 1
 		}
+
+		// We only want to include account names that match all query segments.
+		if queryIndex != len(query.Segments) {
+			continue
+		}
+		// Of those matching all query segments, we only want to include the account
+		// names that are at most one segment longer than the query match.
+		if len(accountName.Segments) > accountNameIndex + 1 {
+			continue
+		}
+
 		matchingAccountNames = append(matchingAccountNames, accountName)
 	}
 

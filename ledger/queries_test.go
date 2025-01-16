@@ -119,4 +119,45 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("returns all account names that contain segments starting with the given segments in order, but may include other segments in between.", func(t *testing.T) {
+		accountNames := []ledger.AccountName{
+			{Segments: []string{"assets"}},
+			{Segments: []string{"assets", "Cash"}},
+			{Segments: []string{"assets", "Cash", "Checking"}},
+			{Segments: []string{"assets", "Cash", "Various"}},
+			{Segments: []string{"assets", "Cash", "Various", "Next"}},
+			{Segments: []string{"assets", "Cash", "Various", "Next", "Too Long"}},
+			{Segments: []string{"assets", "Capital"}},
+			{Segments: []string{"assets", "Capital", "ETFs"}},
+			{Segments: []string{"assets", "Capital", "Various"}},
+			{Segments: []string{"revenue"}},
+			{Segments: []string{"revenue", "Salary"}},
+		}
+
+		type testCase struct {
+			query                *ledger.AccountName
+			expectedAccountNames []ledger.AccountName
+		}
+
+		testCases := []testCase{
+			{
+				query: &ledger.AccountName{
+					Segments: []string{"ass", "Var"},
+				},
+				expectedAccountNames: []ledger.AccountName{
+					{Segments: []string{"assets", "Cash", "Various"}},
+					{Segments: []string{"assets", "Cash", "Various", "Next"}},
+					{Segments: []string{"assets", "Capital", "Various"}},
+				},
+			},
+		}
+		for i, testCase := range testCases {
+			t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) {
+				matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, testCase.query)
+
+				assert.Equal(t, testCase.expectedAccountNames, matchingAccountNames)
+			})
+		}
+	})
 }
