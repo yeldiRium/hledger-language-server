@@ -1,30 +1,33 @@
 package parsercache
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"sync"
 
 	"github.com/yeldiRium/hledger-language-server/documentcache"
 	"github.com/yeldiRium/hledger-language-server/ledger"
+	"github.com/yeldiRium/hledger-language-server/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type ParsingResult struct {
 	journal *ledger.Journal
-	err error
+	err     error
 }
 
 type ParserCache struct {
 	sync.RWMutex
 	documentCache *documentcache.DocumentCache
-	asts map[string]ParsingResult
-	parser *ledger.JournalParser
+	asts          map[string]ParsingResult
+	parser        *ledger.JournalParser
 }
 
 func NewCache(documentCache *documentcache.DocumentCache) *ParserCache {
 	return &ParserCache{
-		asts: make(map[string]ParsingResult),
-		parser: ledger.NewJournalParser(),
+		asts:          make(map[string]ParsingResult),
+		parser:        ledger.NewJournalParser(),
 		documentCache: documentCache,
 	}
 }
@@ -33,16 +36,27 @@ func (cache *ParserCache) Size() int {
 	return len(cache.asts)
 }
 
-func (cache *ParserCache) Parse(filePath string) (*ledger.Journal, error) {
+func (cache *ParserCache) Parse(ctx context.Context, filePath string) (*ledger.Journal, error) {
+	tracer := telemetry.TracerFromContext(ctx)
+	ctx, span := tracer.Start(ctx, "parsercache/parse")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("parsercache.filePath", filePath),
+	)
+
 	cache.RLock()
 	ast, ok := cache.asts[filePath]
 	cache.RUnlock()
 
+	span.SetAttributes(
+		attribute.Bool("parsercache.hit", ok),
+	)
 	if ok {
 		return ast.journal, ast.err
 	}
 
-	file, err := cache.documentCache.Open(filePath)
+	file, err := cache.documentCache.Open(ctx, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open document: %w", err)
 	}
@@ -64,7 +78,7 @@ func (cache *ParserCache) Remove(filePath string) {
 	delete(cache.asts, filePath)
 }
 
-func (cache *ParserCache) ResolveIncludes(journal *ledger.Journal, journalFilePath string) (*ledger.Journal, error) {
+func (cache *ParserCache) ResolveIncludes(ctx context.Context, journal *ledger.Journal, journalFilePath string) (*ledger.Journal, error) {
 	newJournal := ledger.Journal{
 		Entries: make([]ledger.Entry, 0),
 	}
@@ -81,11 +95,11 @@ func (cache *ParserCache) ResolveIncludes(journal *ledger.Journal, journalFilePa
 				includePath = includePath[1:]
 			}
 
-			includeJournal, err := cache.Parse(includePath)
+			includeJournal, err := cache.Parse(ctx, includePath)
 			if err != nil {
 				return nil, err
 			}
-			resolvedIncludeJournal, err := cache.ResolveIncludes(includeJournal, journalFilePath)
+			resolvedIncludeJournal, err := cache.ResolveIncludes(ctx, includeJournal, journalFilePath)
 			if err != nil {
 				return nil, err
 			}

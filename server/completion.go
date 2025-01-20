@@ -38,7 +38,7 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 		attribute.String("lsp.documentFilePath", filePath),
 	)
 
-	journal, err := server.parserCache.Parse(filePath)
+	journal, err := server.parserCache.Parse(ctx, filePath)
 	if err != nil {
 		err = fmt.Errorf("failed to open/parse journal: %w", err)
 		span.RecordError(err)
@@ -46,7 +46,7 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 		return nil, err
 	}
 
-	resolvedJournal, err := server.parserCache.ResolveIncludes(journal, filePath)
+	resolvedJournal, err := server.parserCache.ResolveIncludes(ctx, journal, filePath)
 	if err != nil {
 		err = fmt.Errorf("failed to resolve includes: %w", err)
 		span.RecordError(err)

@@ -97,7 +97,6 @@ func ContextWithTracer(ctx context.Context, tracer t.Tracer) context.Context {
 	return context.WithValue(ctx, "tracer", tracer)
 }
 
-func TracerFromContext(ctx context.Context) (t.Tracer, bool) {
-	tracer, ok := ctx.Value("tracer").(t.Tracer)
-	return tracer, ok
+func TracerFromContext(ctx context.Context) t.Tracer {
+	return ctx.Value("tracer").(t.Tracer)
 }

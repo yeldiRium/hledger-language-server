@@ -2,11 +2,15 @@ package documentcache
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/fs"
 	"sync"
 	"time"
+
+	"github.com/yeldiRium/hledger-language-server/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -48,10 +52,18 @@ func (c *DocumentCache) DeleteFile(fileName string) {
 	delete(c.files, fileName)
 }
 
-func (fs *DocumentCache) Open(name string) (fs.File, error) {
-	fileContent, ok := fs.GetFile(name)
+func (fs *DocumentCache) Open(ctx context.Context, filePath string) (fs.File, error) {
+	tracer := telemetry.TracerFromContext(ctx)
+	ctx, span := tracer.Start(ctx, "documentcache/open")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("documentcache.filePath", filePath),
+	)
+
+	fileContent, ok := fs.GetFile(filePath)
 	if !ok {
-		file, err := fs.workspace.Open(name)
+		file, err := fs.workspace.Open(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrFileNotFound, err)
 		}
@@ -63,13 +75,17 @@ func (fs *DocumentCache) Open(name string) (fs.File, error) {
 
 		fileContent = string(rawFileContent)
 
-		fs.SetFile(name, fileContent)
+		fs.SetFile(filePath, fileContent)
 	}
+	span.SetAttributes(
+		attribute.Bool("documentcache.hit", ok),
+		attribute.Int("documentcache.foundFileSize", len(fileContent)),
+	)
 
 	return &documentCacheFile{
 		Buffer:      bytes.NewBuffer([]byte(fileContent)),
 		fileContent: fileContent,
-		fileName:    name,
+		fileName:    filePath,
 		// TODO: track last modified time
 		lastModified: time.Unix(0, 0),
 	}, nil

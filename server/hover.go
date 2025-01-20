@@ -27,7 +27,7 @@ func (server server) Hover(ctx context.Context, params *protocol.HoverParams) (*
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
 
-	journal, err := server.parserCache.Parse(filePath)
+	journal, err := server.parserCache.Parse(ctx, filePath)
 	if err != nil {
 		server.logger.Warn("textDocument/hover failed to open/parse a journal",
 			zap.String("filePath", filePath),
@@ -35,7 +35,7 @@ func (server server) Hover(ctx context.Context, params *protocol.HoverParams) (*
 		return nil, fmt.Errorf("failed to parse journal: %w", err)
 	}
 
-	resolvedJournal, err := server.parserCache.ResolveIncludes(journal, filePath)
+	resolvedJournal, err := server.parserCache.ResolveIncludes(ctx, journal, filePath)
 	if err != nil {
 		server.logger.Error("textDocument/hover failed to resolve includes",
 			zap.Error(err))
