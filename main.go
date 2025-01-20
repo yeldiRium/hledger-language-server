@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/yeldiRium/hledger-language-server/server"
+	"github.com/yeldiRium/hledger-language-server/telemetry"
 )
 
 func main() {
@@ -35,7 +36,24 @@ func main() {
 		logger.Sugar().Fatalf("while initializing handler: %w", err)
 	}
 
-	connection.Go(ctx, protocol.ServerHandler(handler, jsonrpc2.MethodNotFoundHandler))
+	jsonRpcHandler := protocol.ServerHandler(handler, jsonrpc2.MethodNotFoundHandler)
+
+	t, shutdown, err := telemetry.SetupTelemetry(ctx, logger)
+	if err != nil {
+		logger.Sugar().Errorf("failed to setup telemetry: %w", err)
+	} else {
+		defer shutdown(ctx)
+
+		logger.Sugar().Infof("successfully connected to telemetry backend")
+		jsonRpcHandler = telemetry.WrapInTelemetry(t, jsonRpcHandler)
+	}
+
+	if err != nil {
+		logger.Sugar().Fatalf("failed to start telemetry instrumentation")
+	}
+	defer shutdown(ctx)
+
+	connection.Go(ctx, jsonRpcHandler)
 	<-connection.Done()
 }
 

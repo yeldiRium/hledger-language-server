@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func registerDocumentSyncCapabilities(serverCapabilities *protocol.ServerCapabilities) {
@@ -12,9 +13,15 @@ func registerDocumentSyncCapabilities(serverCapabilities *protocol.ServerCapabil
 }
 
 func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	server.logger.Info("textDocument/didOpen", zap.String("DocumentURI", string(params.TextDocument.URI)))
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("lsp.documentURI", string(params.TextDocument.URI)),
+	)
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
+	span.SetAttributes(
+		attribute.String("lsp.documentFilePath", filePath),
+	)
 
 	server.documentCache.SetFile(filePath, params.TextDocument.Text)
 	server.parserCache.Remove(filePath)
@@ -23,24 +30,38 @@ func (server server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDo
 }
 
 func (server server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	server.logger.Info("textDocument/didChange", zap.String("DocumentURI", string(params.TextDocument.URI)))
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("lsp.documentURI", string(params.TextDocument.URI)),
+	)
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
+	span.SetAttributes(
+		attribute.String("lsp.documentFilePath", filePath),
+	)
 
 	if len(params.ContentChanges) == 1 {
 		server.documentCache.SetFile(filePath, params.ContentChanges[0].Text)
 		server.parserCache.Remove(filePath)
 	} else {
-		server.logger.Warn("textDocument/didChange got unexpected amount of content changes", zap.Int("count", len(params.ContentChanges)))
+		span.AddEvent("unexpected amount of content changes", trace.WithAttributes(
+			attribute.Int("lsp.didChange.contentChangeSize", len(params.ContentChanges)),
+		))
 	}
 
 	return nil
 }
 
 func (server server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
-	server.logger.Info("textDocument/didClose", zap.String("DocumentURI", string(params.TextDocument.URI)))
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("lsp.documentURI", string(params.TextDocument.URI)),
+	)
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
+	span.SetAttributes(
+		attribute.String("lsp.documentFilePath", filePath),
+	)
 
 	server.documentCache.DeleteFile(filePath)
 

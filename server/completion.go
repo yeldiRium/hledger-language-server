@@ -6,9 +6,12 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/yeldiRium/hledger-language-server/ledger"
 	"go.lsp.dev/protocol"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/yeldiRium/hledger-language-server/ledger"
 )
 
 func registerCompletionCapabilities(capabilities *protocol.ServerCapabilities) {
@@ -19,34 +22,47 @@ func registerCompletionCapabilities(capabilities *protocol.ServerCapabilities) {
 }
 
 func (server server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	server.logger.Debug(
-		"textDocument/completion",
-		zap.String("documentURI", string(params.TextDocument.URI)),
+	span := trace.SpanFromContext(ctx)
+
+	lineNumber := int(params.Position.Line + 1)
+	columnNumber := int(params.Position.Character + 1)
+
+	span.SetAttributes(
+		attribute.String("lsp.documentURI", string(params.TextDocument.URI)),
+		attribute.Int("lsp.cursorLineNumber", lineNumber),
+		attribute.Int("lsp.cursorColumnNumber", columnNumber),
 	)
 
 	filePath := getFilePathFromURI(params.TextDocument.URI)
+	span.SetAttributes(
+		attribute.String("lsp.documentFilePath", filePath),
+	)
 
 	journal, err := server.parserCache.Parse(filePath)
 	if err != nil {
-		server.logger.Warn("textDocument/completion failed to open/parse a journal",
-			zap.String("filePath", filePath),
-			zap.Error(err))
-		return nil, fmt.Errorf("failed to parse journal: %w", err)
+		err = fmt.Errorf("failed to open/parse journal: %w", err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	resolvedJournal, err := server.parserCache.ResolveIncludes(journal, filePath)
 	if err != nil {
-		server.logger.Error("textDocument/completion failed to resolve includes",
-			zap.Error(err))
-		return nil, fmt.Errorf("failed to resolve includes: %w", err)
+		err = fmt.Errorf("failed to resolve includes: %w", err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
-	lineNumber := int(params.Position.Line + 1)
-	columnNumber := int(params.Position.Character + 1)
-	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, filePath, lineNumber, columnNumber)
-
 	accountNames := ledger.AccountNames(resolvedJournal)
+
+	accountNameUnderCursor := ledger.FindAccountNameUnderCursor(resolvedJournal, filePath, lineNumber, columnNumber)
 	if accountNameUnderCursor != nil {
+		span.SetAttributes(
+			attribute.String("lsp.cursorElementType", "accountName"),
+			attribute.String("lsp.cursorElementValue", accountNameUnderCursor.String()),
+		)
+
 		accountNames = slices.DeleteFunc(accountNames, func(accountName ledger.AccountName) bool {
 			return accountName.Equals(*accountNameUnderCursor)
 		})
@@ -80,6 +96,10 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 			},
 		}
 	}
+
+	span.SetAttributes(
+		attribute.Int("lsp.completion.completionListSize", len(result.Items)),
+	)
 
 	return &result, nil
 }
