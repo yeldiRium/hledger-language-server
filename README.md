@@ -6,6 +6,11 @@ This is a hobby project to bring language support for [hledger](https://hledger.
 
 - Completion for account names
 
+## Note
+
+This collects telemetry data using open telemetry. By default it sends this data to an open telemetry collector at localhost, which you probably don't have. If you don't set this up and don't provide a collector via environmont variables, no telemetry data will be collected. I don't collect your data.
+I'm doing this just for fun and out of curiosity with my own data.
+
 ## How to use
 
 1. Install hledger-language-server in a way that is appropriate for your OS. Since this software is not distributed to anywhere yet, your best bet in cloning the code, compiling it yourself and putting it in the appropriate location in your system.
