@@ -2,9 +2,12 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 
 	"go.lsp.dev/protocol"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/yeldiRium/hledger-language-server/documentcache"
@@ -17,6 +20,23 @@ type server struct {
 	logger        *zap.Logger
 	documentCache *documentcache.DocumentCache
 	parserCache   *parsercache.ParserCache
+	clientInformation clientInformation
+}
+
+type clientInformation struct {
+	clientName string
+	clientVersion string
+	clientLocale string
+	clientParentProcessID int
+}
+
+func (c clientInformation) AddToSpan(span trace.Span) {
+	span.SetAttributes(
+		attribute.String("client.name", c.clientName),
+		attribute.String("client.version", c.clientVersion),
+		attribute.String("client.locale", c.clientLocale),
+		attribute.Int("client.parentProcessID", c.clientParentProcessID),
+	)
 }
 
 func collectServerCapabilities() protocol.ServerCapabilities {
@@ -27,9 +47,31 @@ func collectServerCapabilities() protocol.ServerCapabilities {
 	return capabilities
 }
 
-func (s server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
+func (server server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
+	span := trace.SpanFromContext(ctx)
+	
+	server.clientInformation = clientInformation{
+		clientName: params.ClientInfo.Name,
+		clientVersion: params.ClientInfo.Version,
+		clientLocale: params.Locale,
+		clientParentProcessID: int(params.ProcessID),
+	}
+	server.clientInformation.AddToSpan(span)
+
+	clientCapabilitiesJson, err := json.Marshal(params.Capabilities)
+	if err != nil {
+		span.SetAttributes(
+			attribute.String("lsp.clientCapabilities", string(clientCapabilitiesJson)),
+		)
+	}
+
 	capabilities := collectServerCapabilities()
-	s.logger.Info("initialize", zap.Any("serverCapabilities", capabilities))
+	serverCapabilitiesJson, err := json.Marshal(capabilities)
+	if err != nil {
+		span.SetAttributes(
+			attribute.String("lsp.serverCapabilities", string(serverCapabilitiesJson)),
+		)
+	}
 
 	return &protocol.InitializeResult{
 		Capabilities: capabilities,
@@ -41,14 +83,16 @@ func (s server) Initialize(ctx context.Context, params *protocol.InitializeParam
 }
 
 func (server server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
-	server.client.ShowMessage(ctx, &protocol.ShowMessageParams{
-		Type:    protocol.MessageTypeInfo,
-		Message: "Hello there!",
-	})
+	span := trace.SpanFromContext(ctx)
+	server.clientInformation.AddToSpan(span)
+
 	return nil
 }
 
-func (h server) Shutdown(ctx context.Context) error {
+func (server server) Shutdown(ctx context.Context) error {
+	span := trace.SpanFromContext(ctx)
+	server.clientInformation.AddToSpan(span)
+
 	return nil
 }
 
@@ -56,11 +100,8 @@ func (h server) Shutdown(ctx context.Context) error {
 // for this is to catche $/cancelRequest requests, which we do not handle yet.
 // TODO: handle cancelRequests so that each handler can opt-in to cancellation
 func (server server) Request(ctx context.Context, method string, params interface{}) (result interface{}, err error) {
-	server.logger.Debug(
-		"request",
-		zap.String("method", method),
-		zap.Any("params", params),
-	)
+	span := trace.SpanFromContext(ctx)
+	server.clientInformation.AddToSpan(span)
 
 	return struct{}{}, nil
 }
@@ -79,5 +120,6 @@ func NewServer(ctx context.Context, protocolServer protocol.Server, protocolClie
 		// TODO: set cache workspace based on project workspace reported from client
 		documentCache: documentCache,
 		parserCache:   parsercache.NewCache(documentCache),
+		clientInformation: clientInformation{},
 	}, ctx, nil
 }
