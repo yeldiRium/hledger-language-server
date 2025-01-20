@@ -76,6 +76,7 @@ func WrapInTelemetry(telemetry *Telemetry, innerHandler jsonrpc2.Handler) jsonrp
 	wrappedHandler := func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
 		ctx, span := telemetry.Tracer.Start(ctx, req.Method())
 		defer span.End()
+		ctx = ContextWithTracer(ctx, telemetry.Tracer)
 
 		SetGlobalAttributes(span)
 
@@ -90,4 +91,13 @@ func WrapInTelemetry(telemetry *Telemetry, innerHandler jsonrpc2.Handler) jsonrp
 	}
 
 	return wrappedHandler
+}
+
+func ContextWithTracer(ctx context.Context, tracer t.Tracer) context.Context {
+	return context.WithValue(ctx, "tracer", tracer)
+}
+
+func TracerFromContext(ctx context.Context) (t.Tracer, bool) {
+	tracer, ok := ctx.Value("tracer").(t.Tracer)
+	return tracer, ok
 }
