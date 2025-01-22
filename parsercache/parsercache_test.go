@@ -1,6 +1,7 @@
 package parsercache_test
 
 import (
+	"context"
 	"testing"
 	"testing/fstest"
 
@@ -51,7 +52,7 @@ func TestParserCache(t *testing.T) {
 			})
 			cache := parsercache.NewCache(documentCache)
 
-			ast, err := cache.Parse("tmp/foo/bar.journal")
+			ast, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
@@ -74,7 +75,7 @@ func TestParserCache(t *testing.T) {
 			})
 			cache := parsercache.NewCache(documentCache)
 
-			_, err := cache.Parse("tmp/foo/bar.journal")
+			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 
 			assert.Error(t, err)
 		})
@@ -87,12 +88,12 @@ func TestParserCache(t *testing.T) {
 			})
 			cache := parsercache.NewCache(documentCache)
 
-			_, err := cache.Parse("tmp/foo/bar.journal")
+			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			assert.NoError(t, err)
 
 			documentCache.SetFile("tmp/foo/bar.journal", "account\n")
 
-			_, err = cache.Parse("tmp/foo/bar.journal")
+			_, err = cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			// If this Parse call had tried to parse the file from the document cache
 			// again, it would have failed, since that document now contains an
 			// invalid ledger format.
@@ -107,12 +108,12 @@ func TestParserCache(t *testing.T) {
 			})
 			cache := parsercache.NewCache(documentCache)
 
-			_, err := cache.Parse("tmp/foo/bar.journal")
+			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			assert.Error(t, err)
 
 			documentCache.SetFile("tmp/foo/bar.journal", "account assets:Cash:Checking\n")
 
-			_, err = cache.Parse("tmp/foo/bar.journal")
+			_, err = cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			assert.Error(t, err)
 		})
 	})
@@ -126,7 +127,7 @@ func TestParserCache(t *testing.T) {
 			})
 			cache := parsercache.NewCache(documentCache)
 
-			ast, err := cache.Parse("tmp/foo/bar.journal")
+			ast, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
@@ -143,7 +144,7 @@ func TestParserCache(t *testing.T) {
 			cache.Remove("tmp/foo/bar.journal")
 			documentCache.SetFile("tmp/foo/bar.journal", "account assets:Cash:Something Else\n")
 
-			ast, err = cache.Parse("tmp/foo/bar.journal")
+			ast, err = cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
@@ -179,7 +180,7 @@ func TestParserCache(t *testing.T) {
 				},
 			}
 
-			resolvedJournal, err := cache.ResolveIncludes(inputJournal, journalFilePath)
+			resolvedJournal, err := cache.ResolveIncludes(context.Background(), inputJournal, journalFilePath)
 
 			assert.NoError(t, err)
 			assert.Equal(t, &ledger.Journal{
@@ -224,7 +225,7 @@ func TestParserCache(t *testing.T) {
 				},
 			}
 
-			resolvedJournal, err := cache.ResolveIncludes(inputJournal, journalFilePath)
+			resolvedJournal, err := cache.ResolveIncludes(context.Background(), inputJournal, journalFilePath)
 
 			assert.NoError(t, err)
 			assert.Equal(t, &ledger.Journal{

@@ -98,5 +98,10 @@ func ContextWithTracer(ctx context.Context, tracer t.Tracer) context.Context {
 }
 
 func TracerFromContext(ctx context.Context) t.Tracer {
-	return ctx.Value("tracer").(t.Tracer)
+	tracer, ok := ctx.Value("tracer").(t.Tracer)
+	if ok {
+		return tracer
+	}
+
+	return otel.Tracer("nil tracer")
 }

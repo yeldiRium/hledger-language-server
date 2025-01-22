@@ -1,6 +1,7 @@
 package documentcache_test
 
 import (
+	"context"
 	"io"
 	"testing"
 	"testing/fstest"
@@ -55,7 +56,7 @@ func TestCache(t *testing.T) {
 		t.Run("fails if the file is neither in the cache nor can be found in the workspace", func(t *testing.T) {
 			cache := documentcache.NewCache(fstest.MapFS{})
 
-			_, err := cache.Open("tmp/foo.txt")
+			_, err := cache.Open(context.Background(), "tmp/foo.txt")
 
 			assert.IsError(t, err, documentcache.ErrFileNotFound)
 		})
@@ -64,7 +65,7 @@ func TestCache(t *testing.T) {
 			cache := documentcache.NewCache(fstest.MapFS{})
 			cache.SetFile("tmp/foo.txt", "file content")
 
-			file, err := cache.Open("tmp/foo.txt")
+			file, err := cache.Open(context.Background(), "tmp/foo.txt")
 
 			assert.NoError(t, err)
 
@@ -85,7 +86,7 @@ func TestCache(t *testing.T) {
 				},
 			})
 
-			file, err := cache.Open("tmp/foo.txt")
+			file, err := cache.Open(context.Background(), "tmp/foo.txt")
 
 			assert.NoError(t, err)
 
@@ -106,7 +107,7 @@ func TestCache(t *testing.T) {
 			cache := documentcache.NewCache(fstest.MapFS{})
 			cache.SetFile("tmp/foo.txt", "file content")
 
-			file, _ := cache.Open("tmp/foo.txt")
+			file, _ := cache.Open(context.Background(), "tmp/foo.txt")
 			fileInfo, _ := file.Stat()
 			assert.Equal(t, time.Unix(0, 0), fileInfo.ModTime())
 		})
