@@ -89,8 +89,8 @@ func FilterAccountNamesByPrefix(accountNames []AccountName, query *AccountName) 
 		queryIndex := 0
 		accountNameIndex := 0
 		for queryIndex < len(query.Segments) && accountNameIndex < len(accountName.Segments) {
-			accountNameSegment := accountName.Segments[accountNameIndex]
-			querySegment := query.Segments[queryIndex]
+			accountNameSegment := strings.ToLower(accountName.Segments[accountNameIndex])
+			querySegment := strings.ToLower(query.Segments[queryIndex])
 
 			if _, ok := strings.CutPrefix(accountNameSegment, querySegment); ok {
 				queryIndex += 1

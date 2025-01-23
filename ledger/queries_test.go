@@ -110,6 +110,22 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 					{Segments: []string{"assets", "Capital"}},
 				},
 			},
+			{
+				query: &ledger.AccountName{
+					Segments: []string{"a", "C", "C"},
+				},
+				expectedAccountNames: []ledger.AccountName{
+					{Segments: []string{"assets", "Cash", "Checking"}},
+				},
+			},
+			{
+				query: &ledger.AccountName{
+					Segments: []string{"a", "c", "c"},
+				},
+				expectedAccountNames: []ledger.AccountName{
+					{Segments: []string{"assets", "Cash", "Checking"}},
+				},
+			},
 		}
 		for i, testCase := range testCases {
 			t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) {
