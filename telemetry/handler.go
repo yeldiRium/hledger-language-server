@@ -23,6 +23,10 @@ type Telemetry struct {
 	Tracer t.Tracer
 }
 
+type telemetryContextKey struct{}
+
+var key = telemetryContextKey{}
+
 func SetupTelemetry(ctx context.Context, logger *zap.Logger) (*Telemetry, func(context.Context) error, error) {
 	resource, err := resource.New(ctx, resource.WithAttributes(
 		attribute.String("service.name", "hledger-language-server"),
@@ -94,11 +98,11 @@ func WrapInTelemetry(telemetry *Telemetry, innerHandler jsonrpc2.Handler) jsonrp
 }
 
 func ContextWithTracer(ctx context.Context, tracer t.Tracer) context.Context {
-	return context.WithValue(ctx, "tracer", tracer)
+	return context.WithValue(ctx, key, tracer)
 }
 
 func TracerFromContext(ctx context.Context) t.Tracer {
-	tracer, ok := ctx.Value("tracer").(t.Tracer)
+	tracer, ok := ctx.Value(key).(t.Tracer)
 	if ok {
 		return tracer
 	}

@@ -20,7 +20,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(dir)
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
 	logFile := filepath.Join(dir, "log.txt")
 
 	zapConfig := zap.NewDevelopmentConfig()
@@ -42,7 +44,9 @@ func main() {
 	if err != nil {
 		logger.Sugar().Errorf("failed to setup telemetry: %w", err)
 	} else {
-		defer shutdown(ctx)
+		defer func() {
+			_ = shutdown(ctx)
+		}()
 
 		logger.Sugar().Infof("successfully connected to telemetry backend")
 		jsonRpcHandler = telemetry.WrapInTelemetry(t, jsonRpcHandler)
@@ -51,7 +55,9 @@ func main() {
 	if err != nil {
 		logger.Sugar().Fatalf("failed to start telemetry instrumentation")
 	}
-	defer shutdown(ctx)
+	defer func() {
+		_ = shutdown(ctx)
+	}()
 
 	connection.Go(ctx, jsonRpcHandler)
 	<-connection.Done()

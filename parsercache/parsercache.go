@@ -104,9 +104,7 @@ func (cache *ParserCache) ResolveIncludes(ctx context.Context, journal *ledger.J
 				return nil, err
 			}
 
-			for _, entry := range resolvedIncludeJournal.Entries {
-				newJournal.Entries = append(newJournal.Entries, entry)
-			}
+			newJournal.Entries = append(newJournal.Entries, resolvedIncludeJournal.Entries...)
 		default:
 			newJournal.Entries = append(newJournal.Entries, entry)
 		}

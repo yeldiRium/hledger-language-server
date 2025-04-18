@@ -120,12 +120,9 @@ func AcceptAccountName(lexer *lexing.Lexer) (didConsumeAccountNameSegments bool,
 		if didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
 			if r == ' ' {
 				nextRune := lexer.Peek()
-				if nextRune == ' ' {
-					return false
-				}
-				return true
+				return nextRune != ' '
 			}
-			return strings.IndexRune("()[]:\n", r) == -1
+			return !strings.ContainsRune("()[]:\n", r)
 		}); err != nil {
 			return false, nil, err
 		} else if didConsumeRunes {
@@ -202,7 +199,7 @@ func lexPosting(lexer *lexing.Lexer) lexing.StateFn {
 			}
 			return true
 		}
-		return strings.IndexRune("()[]\n", r) == -1
+		return !strings.ContainsRune("()[]\n", r)
 	}); err != nil {
 		lexer.Error(err)
 		return nil

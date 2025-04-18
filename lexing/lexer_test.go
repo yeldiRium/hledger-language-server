@@ -92,8 +92,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("runs the lexer until an error is encountered.", func(t *testing.T) {
-				var rootState lexing.StateFn
-				rootState = func(lexer *lexing.Lexer) lexing.StateFn {
+				rootState := func(lexer *lexing.Lexer) lexing.StateFn {
 					lexer.Errorf("something went wrong")
 					return nil
 				}
@@ -264,7 +263,7 @@ func TestLexer(t *testing.T) {
 				lexer, filename := prepareLexer("0", []string{}, nil)
 
 				ok, _, err := lexer.AcceptFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.True(t, ok)
@@ -275,7 +274,7 @@ func TestLexer(t *testing.T) {
 				lexer, filename := prepareLexer("7", []string{}, nil)
 
 				ok, _, err := lexer.AcceptFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.False(t, ok)
@@ -327,7 +326,7 @@ func TestLexer(t *testing.T) {
 				lexer, filename := prepareLexer("0123456789", []string{}, nil)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.True(t, didConsumeRunes)
@@ -338,7 +337,7 @@ func TestLexer(t *testing.T) {
 				lexer, filename := prepareLexer("555", []string{}, nil)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.False(t, didConsumeRunes)
@@ -349,7 +348,7 @@ func TestLexer(t *testing.T) {
 				lexer, filename := prepareLexer("0123456789", []string{}, nil)
 
 				didConsumeRunes, backup, err := lexer.AcceptRunFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.True(t, didConsumeRunes)
@@ -362,7 +361,7 @@ func TestLexer(t *testing.T) {
 				lexer, _ := prepareLexer("", []string{}, nil)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
-					return strings.IndexRune("01234", r) != -1
+					return strings.ContainsRune("01234", r)
 				})
 				assert.NoError(t, err)
 				assert.False(t, didConsumeRunes)
@@ -457,7 +456,7 @@ func TestLexer(t *testing.T) {
 			t.Run("returns true if the previous rune in the input belongs to the valid set.", func(t *testing.T) {
 				lexer, _ := prepareLexer("test input", []string{}, nil)
 
-				lexer.Accept("t")
+				_, _, _ = lexer.Accept("t")
 
 				ok := lexer.AssertAfter("t")
 				assert.True(t, ok)
@@ -466,7 +465,7 @@ func TestLexer(t *testing.T) {
 			t.Run("returns false if the previous rune in the input does not belong to the valid set.", func(t *testing.T) {
 				lexer, _ := prepareLexer("test input", []string{}, nil)
 
-				lexer.Accept("t")
+				_, _, _ = lexer.Accept("t")
 
 				ok := lexer.AssertAfter("abc")
 				assert.False(t, ok)
@@ -495,7 +494,7 @@ func TestLexer(t *testing.T) {
 			t.Run("returns false if the current position is not at the beginning of the input.", func(t *testing.T) {
 				lexer, _ := prepareLexer("test input", []string{}, nil)
 
-				lexer.Accept("t")
+				_, _, _ = lexer.Accept("t")
 
 				ok := lexer.AssertAtStart()
 				assert.False(t, ok)

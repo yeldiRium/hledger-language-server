@@ -54,7 +54,7 @@ func (c *DocumentCache) DeleteFile(fileName string) {
 
 func (fs *DocumentCache) Open(ctx context.Context, filePath string) (fs.File, error) {
 	tracer := telemetry.TracerFromContext(ctx)
-	ctx, span := tracer.Start(ctx, "documentcache/open")
+	_, span := tracer.Start(ctx, "documentcache/open")
 	defer span.End()
 
 	span.SetAttributes(

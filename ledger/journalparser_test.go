@@ -16,7 +16,7 @@ func TestJournalParser(t *testing.T) {
 
 	runParser := func(testFileContent string) ([]participleLexer.Token, *ledger.Journal, error) {
 		lexer := ledger.NewJournalLexer()
-		lex, err := lexer.LexString(filename, testFileContent)
+		lex, _ := lexer.LexString(filename, testFileContent)
 		tokens := make([]participleLexer.Token, 0)
 		token, err := lex.Next()
 		for err == nil && token.Type != participleLexer.EOF {

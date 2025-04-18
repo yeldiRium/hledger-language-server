@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	participleLexer "github.com/alecthomas/participle/v2/lexer" 
+	participleLexer "github.com/alecthomas/participle/v2/lexer"
 )
 
 const EOF = -1
@@ -105,7 +105,7 @@ type BackupFn func()
 type Lexer struct {
 	name       string // used only for error reports
 	definition *LexerDefinition
-	input      string           // the string being lexed
+	input      string                     // the string being lexed
 	start      participleLexer.Position   // start of the current token
 	pos        participleLexer.Position   // current position in the input
 	tokens     chan participleLexer.Token // channel of lexed tokens
@@ -238,7 +238,7 @@ func (lexer *Lexer) Accept(valid string) (bool, BackupFn, error) {
 	if rune == EOF {
 		return false, nil, ErrEof
 	}
-	if strings.IndexRune(valid, rune) != -1 {
+	if strings.ContainsRune(valid, rune) {
 		return true, backup, nil
 	}
 	backup()
@@ -278,7 +278,7 @@ func (lexer *Lexer) AcceptRun(valid string) (didConsumeRunes bool, backup Backup
 	didConsumeRunes = false
 	for {
 		rune, backupOnce := lexer.NextRune()
-		if strings.IndexRune(valid, rune) == -1 {
+		if !strings.ContainsRune(valid, rune) {
 			backupOnce()
 			break
 		}
@@ -310,7 +310,7 @@ func (lexer *Lexer) AcceptUntil(invalid string) (didConsumeRunes bool, backup Ba
 	didConsumeRunes = false
 	for {
 		rune, backupOnce := lexer.NextRune()
-		if strings.IndexRune(invalid, rune) != -1 || rune == EOF {
+		if strings.ContainsRune(invalid, rune) || rune == EOF {
 			backupOnce()
 			break
 		}
@@ -357,7 +357,7 @@ func (lexer *Lexer) AssertAfter(valid string) bool {
 		panic(err)
 	}
 
-	if strings.IndexRune(valid, rune) != -1 {
+	if strings.ContainsRune(valid, rune) {
 		return true
 	}
 	return false
