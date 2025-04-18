@@ -11,6 +11,7 @@
   },
   "shell": {
     "scripts": {
+      "build": "go build .",
       "doc":  "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
       "lint": "golangci-lint run ./...",
       "lint:fix": "golangci-lint run --fix ./...",
