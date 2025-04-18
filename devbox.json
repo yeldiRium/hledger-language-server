@@ -11,6 +11,7 @@
   "shell": {
     "scripts": {
       "doc": "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
+      "test": "go test ./...",
       "make:diagrams": [
         "mkdir -p ledger/diagrams",
         "go run cmd/parser-diagram/main.go | go run github.com/alecthomas/participle/v2/cmd/railroad > ledger/diagrams/index.html"
