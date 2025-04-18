@@ -3,14 +3,17 @@
   "packages": [
     "go@latest",
     "wget@latest",
-    "gotools@latest"
+    "gotools@latest",
+    "golangci-lint@latest"
   ],
   "env": {
     "NIX_HARDENING_ENABLE": ""
   },
   "shell": {
     "scripts": {
-      "doc": "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
+      "doc":  "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
+      "lint": "golangci-lint run ./...",
+      "lint:fix": "golangci-lint run --fix ./...",
       "test": "go test ./...",
       "make:diagrams": [
         "mkdir -p ledger/diagrams",
@@ -19,7 +22,7 @@
       "make:diagrams:assets": [
         "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.js -O ledger/diagrams/railroad-diagrams.js",
         "wget https://raw.githubusercontent.com/alecthomas/participle/refs/heads/master/cmd/railroad/assets/railroad-diagrams.css -O ledger/diagrams/railroad-diagrams.css"
-     ]
+      ]
     }
   }
 }
