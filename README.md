@@ -14,7 +14,7 @@ I'm doing this just for fun and out of curiosity with my own data.
 ## How to use
 
 1. Install hledger-language-server in a way that is appropriate for your OS. Since this software is not distributed to anywhere yet, your best bet in cloning the code, compiling it yourself and putting it in the appropriate location in your system.
-2. Configure your editor to know where the binary is and to use it for ledger files. I have this in my neovim lps configuration (using nvim-lspconfig):
+2. Configure your editor to know where the binary is and to use it for ledger files. I have this in my neovim lsp configuration (using nvim-lspconfig):
 ```lua
 if not lspConfigurations.hledger_ls then
   lspConfigurations.hledger_ls = {
