@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/yeldiRium/hledger-language-server/ledger"
+	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
 func main() {

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yeldiRium/hledger-language-server/telemetry"
+	"github.com/yeldiRium/hledger-language-server/internal/telemetry"
 	"go.opentelemetry.io/otel/attribute"
 )
 

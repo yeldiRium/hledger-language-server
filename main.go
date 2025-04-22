@@ -11,8 +11,8 @@ import (
 	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
 
-	"github.com/yeldiRium/hledger-language-server/server"
-	"github.com/yeldiRium/hledger-language-server/telemetry"
+	"github.com/yeldiRium/hledger-language-server/internal/server"
+	"github.com/yeldiRium/hledger-language-server/internal/telemetry"
 )
 
 func main() {

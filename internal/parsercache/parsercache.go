@@ -6,10 +6,11 @@ import (
 	"path"
 	"sync"
 
-	"github.com/yeldiRium/hledger-language-server/documentcache"
-	"github.com/yeldiRium/hledger-language-server/ledger"
-	"github.com/yeldiRium/hledger-language-server/telemetry"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
+	"github.com/yeldiRium/hledger-language-server/internal/ledger"
+	"github.com/yeldiRium/hledger-language-server/internal/telemetry"
 )
 
 type ParsingResult struct {

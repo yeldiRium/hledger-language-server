@@ -10,8 +10,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
-	"github.com/yeldiRium/hledger-language-server/documentcache"
-	"github.com/yeldiRium/hledger-language-server/parsercache"
+	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
+	"github.com/yeldiRium/hledger-language-server/internal/parsercache"
 )
 
 type server struct {

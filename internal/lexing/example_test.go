@@ -3,7 +3,7 @@ package lexing_test
 import (
 	"errors"
 
-	"github.com/yeldiRium/hledger-language-server/lexing"
+	"github.com/yeldiRium/hledger-language-server/internal/lexing"
 )
 
 // ExampleLexerDefinition demonstrates a very simple lexer that recognizes

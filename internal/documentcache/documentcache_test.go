@@ -9,7 +9,7 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 
-	"github.com/yeldiRium/hledger-language-server/documentcache"
+	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
 )
 
 func TestCache(t *testing.T) {

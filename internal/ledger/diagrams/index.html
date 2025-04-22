@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<style>
+body {
+	background-color: hsl(30,20%, 95%);
+}
+h1 {
+	font-family: sans-serif;
+	font-size: 1em;
+}
+</style>
+<!-- From https://github.com/tabatkins/railroad-diagrams -->
+<link rel='stylesheet' href='railroad-diagrams.css'>
+<script src='railroad-diagrams.js'></script>
+<body>
+<h1 id="Journal">Journal</h1>
+<script>
+Diagram(Choice(0, Sequence(ZeroOrMore(Choice(0, Sequence(NonTerminal("Entry", {href:"#Entry"})), Sequence(Choice(0, Sequence(Optional(NonTerminal("indent")), Choice(0, Sequence(NonTerminal("newline")), Sequence(NonTerminal("garbage"))))))))))).addTo();
+</script>
+
+<h1 id="Entry">Entry</h1>
+<script>
+Diagram(Choice(0, Sequence(NonTerminal("IncludeDirective", {href:"#IncludeDirective"})), Sequence(NonTerminal("AccountDirective", {href:"#AccountDirective"})), Sequence(NonTerminal("RealPosting", {href:"#RealPosting"})), Sequence(NonTerminal("VirtualPosting", {href:"#VirtualPosting"})), Sequence(NonTerminal("VirtualBalancedPosting", {href:"#VirtualBalancedPosting"})))).addTo();
+</script>
+
+<h1 id="IncludeDirective">IncludeDirective</h1>
+<script>
+Diagram(Choice(0, Sequence(Terminal("include"), NonTerminal("whitespace"), NonTerminal("includepath"), NonTerminal("newline")))).addTo();
+</script>
+
+<h1 id="AccountDirective">AccountDirective</h1>
+<script>
+Diagram(Choice(0, Sequence(Terminal("account"), NonTerminal("whitespace"), NonTerminal("AccountName", {href:"#AccountName"}), Optional(Choice(0, Sequence(NonTerminal("inlinecommentindicator"), NonTerminal("garbage")))), NonTerminal("newline")))).addTo();
+</script>
+
+<h1 id="AccountName">AccountName</h1>
+<script>
+Diagram(Choice(0, Sequence(NonTerminal("accountnamesegment"), ZeroOrMore(Choice(0, Sequence(Terminal(":"), NonTerminal("accountnamesegment"))))))).addTo();
+</script>
+
+<h1 id="RealPosting">RealPosting</h1>
+<script>
+Diagram(Choice(0, Sequence(NonTerminal("indent"), Optional(Choice(0, Sequence(Choice(0, Sequence(Terminal("*")), Sequence(Terminal("!"))), Terminal(" ")))), NonTerminal("AccountName", {href:"#AccountName"}), Optional(Choice(0, Sequence(NonTerminal("whitespace"), NonTerminal("amount")))), Optional(Choice(0, Sequence(NonTerminal("inlinecommentindicator"), NonTerminal("garbage")))), NonTerminal("newline")))).addTo();
+</script>
+
+<h1 id="VirtualPosting">VirtualPosting</h1>
+<script>
+Diagram(Choice(0, Sequence(NonTerminal("indent"), Optional(Choice(0, Sequence(Choice(0, Sequence(Terminal("*")), Sequence(Terminal("!"))), Terminal(" ")))), Terminal("("), NonTerminal("AccountName", {href:"#AccountName"}), Terminal(")"), Optional(Choice(0, Sequence(NonTerminal("whitespace"), NonTerminal("amount")))), Optional(Choice(0, Sequence(NonTerminal("inlinecommentindicator"), NonTerminal("garbage")))), NonTerminal("newline")))).addTo();
+</script>
+
+<h1 id="VirtualBalancedPosting">VirtualBalancedPosting</h1>
+<script>
+Diagram(Choice(0, Sequence(NonTerminal("indent"), Optional(Choice(0, Sequence(Choice(0, Sequence(Terminal("*")), Sequence(Terminal("!"))), Terminal(" ")))), Terminal("["), NonTerminal("AccountName", {href:"#AccountName"}), Terminal("]"), Optional(Choice(0, Sequence(NonTerminal("whitespace"), NonTerminal("amount")))), Optional(Choice(0, Sequence(NonTerminal("inlinecommentindicator"), NonTerminal("garbage")))), NonTerminal("newline")))).addTo();
+</script>
+
+</body>
+

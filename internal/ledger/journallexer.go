@@ -3,7 +3,7 @@ package ledger
 import (
 	"strings"
 
-	"github.com/yeldiRium/hledger-language-server/lexing"
+	"github.com/yeldiRium/hledger-language-server/internal/lexing"
 )
 
 func lexRoot(lexer *lexing.Lexer) lexing.StateFn {

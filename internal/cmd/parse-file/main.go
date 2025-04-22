@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yeldiRium/hledger-language-server/ledger"
+	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
 func main() {

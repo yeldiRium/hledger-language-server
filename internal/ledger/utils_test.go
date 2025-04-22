@@ -3,7 +3,7 @@ package ledger_test
 import (
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 
-	"github.com/yeldiRium/hledger-language-server/ledger"
+	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
 func pruneMetadataFromAst(ast *ledger.Journal) {
