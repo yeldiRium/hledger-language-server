@@ -14,6 +14,7 @@
       "build": "go build .",
       "doc":  "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
       "lint": "golangci-lint run ./...",
+      "dev":      "./tmux.sh",
       "lint:fix": "golangci-lint run --fix ./...",
       "test": "go test ./...",
       "make:diagrams": [
