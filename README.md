@@ -44,3 +44,7 @@ devbox shell
 # Then build the executable
 devbox run build
 ```
+
+## Related projects
+
+- [wllfaria/ledger.nvim](https://github.com/wllfaria/ledger.nvim) - Autocompletion and snippets using treesitter and nvim-cmp. Many more features than this project currently has. Not a language server.
