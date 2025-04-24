@@ -1,6 +1,18 @@
 # TODO
 
+## general
+- [ ] add actual CLI
+  - [ ] make log file configurable and optional
+  - [ ] make log level configurable
+  - [ ] add version sub-command
+
 ## journal file parser
+- testing
+    - [ ] write testing framework that allows comparing an input file with a resulting lexer token list
+    - [ ] write testing framework that allows comparing an input file with a resulting AST
+        - needs to be practical.
+        - maybe add option to ignore or only include certain tokens?
+        - maybe add option to make pos and other metadata optional?
 - directives
     - [x] support account directive (`account`)
     - [ ] support payee directive (`payee`)
