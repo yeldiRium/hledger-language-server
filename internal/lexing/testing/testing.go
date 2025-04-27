@@ -1,9 +1,11 @@
-package lexing
+package testing
 
 import (
 	"fmt"
 
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
+
+	"github.com/yeldiRium/hledger-language-server/internal/lexing"
 )
 
 type MiniToken struct {
@@ -11,7 +13,7 @@ type MiniToken struct {
 	Value string
 }
 
-func MakeTokens(lexer *Lexer, fileName string, miniTokens []MiniToken) []participleLexer.Token {
+func MakeTokens(lexer *lexing.Lexer, fileName string, miniTokens []MiniToken) []participleLexer.Token {
 	tokens := make([]participleLexer.Token, len(miniTokens))
 	pos := participleLexer.Position{Filename: fileName, Offset: 0, Line: 1, Column: 1}
 	for i, token := range miniTokens {
@@ -25,7 +27,7 @@ func MakeTokens(lexer *Lexer, fileName string, miniTokens []MiniToken) []partici
 	return tokens
 }
 
-func RunLexerWithFileName(lexerDefinition *LexerDefinition, input string, fileName string) (*Lexer, []participleLexer.Token, error) {
+func RunLexerWithFileName(lexerDefinition *lexing.LexerDefinition, input string, fileName string) (*lexing.Lexer, []participleLexer.Token, error) {
 	lexer, err := lexerDefinition.LexString(fileName, input)
 	if err != nil {
 		return nil, nil, err
@@ -42,3 +44,6 @@ func RunLexerWithFileName(lexerDefinition *LexerDefinition, input string, fileNa
 
 	return lexer, tokens, nil
 }
+
+//func TestLexer(lexerDefinition *LexerDefinition, input string, ...opts []TestLexerOption) {
+//}

@@ -7,16 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/yeldiRium/hledger-language-server/internal/lexing"
+	lextesting "github.com/yeldiRium/hledger-language-server/internal/lexing/testing"
 )
 
 func TestJournalLexer(t *testing.T) {
 	fileName := "testFile"
 	runLexer := func(input string) (*lexing.Lexer, []participleLexer.Token, error) {
 		lexerDefinition := NewJournalLexer()
-		return lexing.RunLexerWithFileName(lexerDefinition, input, fileName)
+		return lextesting.RunLexerWithFileName(lexerDefinition, input, fileName)
 	}
-	makeTokens := func(lexer *lexing.Lexer, miniTokens []lexing.MiniToken) []participleLexer.Token {
-		return lexing.MakeTokens(lexer, fileName, miniTokens)
+	makeTokens := func(lexer *lexing.Lexer, miniTokens []lextesting.MiniToken) []participleLexer.Token {
+		return lextesting.MakeTokens(lexer, fileName, miniTokens)
 	}
 
 	t.Run("Miscellaneous", func(t *testing.T) {
@@ -29,7 +30,7 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("Lexes newlines", func(t *testing.T) {
 			lexer, tokens, err := runLexer("\n\n")
 			assert.NoError(t, err)
-			assert.Equal(t, makeTokens(lexer, []lexing.MiniToken{
+			assert.Equal(t, makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
 			}), tokens)
@@ -38,7 +39,7 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("Lexes garbage and newlines.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("this is not a valid journal file\n\nheckmeck\n")
 			assert.NoError(t, err)
-			assert.Equal(t, makeTokens(lexer, []lexing.MiniToken{
+			assert.Equal(t, makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Garbage", Value: "this is not a valid journal file"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Newline", Value: "\n"},
@@ -50,7 +51,7 @@ func TestJournalLexer(t *testing.T) {
 		t.Run("Lexes newlines with whitespace.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    \n")
 			assert.NoError(t, err)
-			assert.Equal(t, makeTokens(lexer, []lexing.MiniToken{
+			assert.Equal(t, makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "Newline", Value: "\n"},
 			}), tokens)
@@ -185,7 +186,7 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				makeTokens(lexer, []lexing.MiniToken{
+				makeTokens(lexer, []lextesting.MiniToken{
 					{Type: "IncludeDirective", Value: "include"},
 					{Type: "Whitespace", Value: " "},
 					{Type: "IncludePath", Value: "some/path.journal"},
@@ -200,7 +201,7 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				makeTokens(lexer, []lexing.MiniToken{
+				makeTokens(lexer, []lextesting.MiniToken{
 					{Type: "IncludeDirective", Value: "include"},
 					{Type: "Newline", Value: "\n"},
 				}),
@@ -215,7 +216,7 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				makeTokens(lexer, []lexing.MiniToken{
+				makeTokens(lexer, []lextesting.MiniToken{
 					{Type: "AccountDirective", Value: "account"},
 					{Type: "Whitespace", Value: " "},
 					{Type: "AccountNameSegment", Value: "assets"},
@@ -234,7 +235,7 @@ func TestJournalLexer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
-				makeTokens(lexer, []lexing.MiniToken{
+				makeTokens(lexer, []lextesting.MiniToken{
 					{Type: "AccountDirective", Value: "account"},
 					{Type: "Whitespace", Value: " "},
 					{Type: "AccountNameSegment", Value: "assets"},
@@ -256,7 +257,7 @@ func TestJournalLexer(t *testing.T) {
 			assert.Greater(t, len(tokens), 7)
 			assert.Equal(
 				t,
-				makeTokens(lexer, []lexing.MiniToken{
+				makeTokens(lexer, []lextesting.MiniToken{
 					{Type: "AccountDirective", Value: "account"},
 					{Type: "Whitespace", Value: " "},
 					{Type: "AccountNameSegment", Value: "assets"},
@@ -303,7 +304,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting and its amount.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    expenses:Groceries      1,234.56 €  ; inline comment\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "AccountNameSegment", Value: "expenses"},
 				{Type: "AccountNameSeparator", Value: ":"},
@@ -322,7 +323,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with ! status indicator.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    ! expenses:Groceries\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "PostingStatusIndicator", Value: "!"},
 				{Type: "Whitespace", Value: " "},
@@ -339,7 +340,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with * status indicator.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    * expenses:Groceries\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "PostingStatusIndicator", Value: "*"},
 				{Type: "Whitespace", Value: " "},
@@ -356,7 +357,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with a virtual account.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    (expenses:Groceries)      1,234.56 €\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "AccountNameDelimiter", Value: "("},
 				{Type: "AccountNameSegment", Value: "expenses"},
@@ -375,7 +376,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with a balanced virtual account.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    [expenses:Groceries]      1,234.56 €\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "AccountNameDelimiter", Value: "["},
 				{Type: "AccountNameSegment", Value: "expenses"},
@@ -394,7 +395,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with a status indicator and virtual account.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    ! (expenses:Groceries)      1,234.56 €\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "PostingStatusIndicator", Value: "!"},
 				{Type: "Whitespace", Value: " "},
@@ -415,7 +416,7 @@ account expenses:Food:Groceries
 		t.Run("lexes a posting with a currency conversion that includes a double space.", func(t *testing.T) {
 			lexer, tokens, err := runLexer("    expenses:Groceries   -1,234.56 BTC @  1,234.50 €\n")
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Indent", Value: "    "},
 				{Type: "AccountNameSegment", Value: "expenses"},
 				{Type: "AccountNameSeparator", Value: ":"},
@@ -484,7 +485,7 @@ commodity EUR
 `)
 			assert.NoError(t, err)
 
-			expectedTokens := makeTokens(lexer, []lexing.MiniToken{
+			expectedTokens := makeTokens(lexer, []lextesting.MiniToken{
 				{Type: "Garbage", Value: "; This is a cool journal file"},
 				{Type: "Newline", Value: "\n"},
 				{Type: "Garbage", Value: "# It includes many things"},
