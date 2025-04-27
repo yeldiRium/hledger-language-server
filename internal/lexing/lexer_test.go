@@ -9,18 +9,6 @@ import (
 )
 
 func TestLexer(t *testing.T) {
-	collectLexerTokens := func(lexer participleLexer.Lexer) ([]participleLexer.Token, error) {
-		tokens := make([]participleLexer.Token, 0)
-		for token, err := lexer.Next(); token.Type != participleLexer.EOF; token, err = lexer.Next() {
-			if err != nil {
-				return nil, err
-			}
-			tokens = append(tokens, token)
-		}
-
-		return tokens, nil
-	}
-
 	t.Run("LexerDefinition", func(t *testing.T) {
 		t.Run("contains a default list of symbols.", func(t *testing.T) {
 			definition := NewLexerDefinition(nil, []string{})
@@ -77,7 +65,7 @@ func TestLexer(t *testing.T) {
 				lexer, err := lexerDefinition.LexString("testFile", "foo")
 				assert.NoError(t, err)
 
-				tokens, err := collectLexerTokens(lexer)
+				tokens, err := CollectAllLexerTokens(lexer)
 				assert.NoError(t, err)
 				assert.Equal(t, []participleLexer.Token{
 					{Type: 1337, Value: "f", Pos: participleLexer.Position{Filename: "testFile", Line: 1, Column: 1, Offset: 0}},
@@ -104,7 +92,7 @@ func TestLexer(t *testing.T) {
 				lexer, err := lexerDefinition.LexString("testFile", "foo")
 				assert.NoError(t, err)
 
-				_, err = collectLexerTokens(lexer)
+				_, err = CollectAllLexerTokens(lexer)
 				assert.Error(t, err, "something went wrong")
 
 				token, _ := lexer.Next()
