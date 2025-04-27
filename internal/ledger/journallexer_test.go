@@ -1,4 +1,4 @@
-package ledger_test
+package ledger
 
 import (
 	"testing"
@@ -6,14 +6,13 @@ import (
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 	"github.com/yeldiRium/hledger-language-server/internal/lexing"
 )
 
 func TestJournalLexer(t *testing.T) {
 	fileName := "testFile"
 	runLexer := func(input string) (*lexing.Lexer, []participleLexer.Token, error) {
-		lexerDefinition := ledger.NewJournalLexer()
+		lexerDefinition := NewJournalLexer()
 		return lexing.RunLexerWithFileName(lexerDefinition, input, fileName)
 	}
 	makeTokens := func(lexer *lexing.Lexer, miniTokens []lexing.MiniToken) []participleLexer.Token {
@@ -78,7 +77,7 @@ func TestJournalLexer(t *testing.T) {
 					make(chan participleLexer.Token, 1),
 				)
 
-				ok, _, err := ledger.AcceptInlineCommentIndicator(lexer)
+				ok, _, err := AcceptInlineCommentIndicator(lexer)
 				assert.NoError(t, err)
 				assert.True(t, ok)
 				assert.Equal(t, participleLexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, lexer.Pos())
@@ -102,7 +101,7 @@ func TestJournalLexer(t *testing.T) {
 					make(chan participleLexer.Token, 1),
 				)
 
-				ok, _, err := ledger.AcceptInlineCommentIndicator(lexer)
+				ok, _, err := AcceptInlineCommentIndicator(lexer)
 				assert.NoError(t, err)
 				assert.True(t, ok)
 				assert.Equal(t, participleLexer.Position{Filename: filename, Line: 1, Column: 4, Offset: 3}, lexer.Pos())
@@ -126,7 +125,7 @@ func TestJournalLexer(t *testing.T) {
 					make(chan participleLexer.Token, 1),
 				)
 
-				ok, _, err := ledger.AcceptInlineCommentIndicator(lexer)
+				ok, _, err := AcceptInlineCommentIndicator(lexer)
 				assert.NoError(t, err)
 				assert.False(t, ok)
 				assert.Equal(t, participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, lexer.Pos())
@@ -150,7 +149,7 @@ func TestJournalLexer(t *testing.T) {
 					make(chan participleLexer.Token, 1),
 				)
 
-				ok, _, err := ledger.AcceptInlineCommentIndicator(lexer)
+				ok, _, err := AcceptInlineCommentIndicator(lexer)
 				assert.NoError(t, err)
 				assert.False(t, ok)
 				assert.Equal(t, participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0}, lexer.Pos())
@@ -174,7 +173,7 @@ func TestJournalLexer(t *testing.T) {
 					make(chan participleLexer.Token, 1),
 				)
 
-				_, _, err := ledger.AcceptInlineCommentIndicator(lexer)
+				_, _, err := AcceptInlineCommentIndicator(lexer)
 				assert.ErrorIs(t, err, lexing.ErrEof)
 			})
 		})

@@ -1,4 +1,4 @@
-package documentcache_test
+package documentcache
 
 import (
 	"context"
@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert/v2"
-
-	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
 )
 
 func TestCache(t *testing.T) {
 	t.Run("can add and retrieve files.", func(t *testing.T) {
-		cache := documentcache.NewCache(fstest.MapFS{})
+		cache := NewCache(fstest.MapFS{})
 		cache.SetFile("tmp/foo.txt", "file content")
 
 		content, ok := cache.GetFile("tmp/foo.txt")
@@ -24,7 +22,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("returns w/e, false for files that are not cached.", func(t *testing.T) {
-		cache := documentcache.NewCache(fstest.MapFS{})
+		cache := NewCache(fstest.MapFS{})
 
 		_, ok := cache.GetFile("tmp/doesnt-exist")
 
@@ -32,7 +30,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("can overwrite a cached file.", func(t *testing.T) {
-		cache := documentcache.NewCache(fstest.MapFS{})
+		cache := NewCache(fstest.MapFS{})
 		cache.SetFile("tmp/foo.txt", "file content")
 		cache.SetFile("tmp/foo.txt", "file content overwritten")
 
@@ -43,7 +41,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("can delete a cached file.", func(t *testing.T) {
-		cache := documentcache.NewCache(fstest.MapFS{})
+		cache := NewCache(fstest.MapFS{})
 		cache.SetFile("tmp/foo.txt", "file content")
 		cache.DeleteFile("tmp/foo.txt")
 
@@ -54,15 +52,15 @@ func TestCache(t *testing.T) {
 
 	t.Run("Open", func(t *testing.T) {
 		t.Run("fails if the file is neither in the cache nor can be found in the workspace", func(t *testing.T) {
-			cache := documentcache.NewCache(fstest.MapFS{})
+			cache := NewCache(fstest.MapFS{})
 
 			_, err := cache.Open(context.Background(), "tmp/foo.txt")
 
-			assert.IsError(t, err, documentcache.ErrFileNotFound)
+			assert.IsError(t, err, ErrFileNotFound)
 		})
 
 		t.Run("returns a file from the cache.", func(t *testing.T) {
-			cache := documentcache.NewCache(fstest.MapFS{})
+			cache := NewCache(fstest.MapFS{})
 			cache.SetFile("tmp/foo.txt", "file content")
 
 			file, err := cache.Open(context.Background(), "tmp/foo.txt")
@@ -80,7 +78,7 @@ func TestCache(t *testing.T) {
 		})
 
 		t.Run("reads a file from the workspace FS if it is not found in the cache, then adds it to the cache.", func(t *testing.T) {
-			cache := documentcache.NewCache(fstest.MapFS{
+			cache := NewCache(fstest.MapFS{
 				"tmp/foo.txt": &fstest.MapFile{
 					Data: []byte("file content"),
 				},
@@ -104,7 +102,7 @@ func TestCache(t *testing.T) {
 		})
 
 		t.Run("does not yet track the last modified time of cached documents.", func(t *testing.T) {
-			cache := documentcache.NewCache(fstest.MapFS{})
+			cache := NewCache(fstest.MapFS{})
 			cache.SetFile("tmp/foo.txt", "file content")
 
 			file, _ := cache.Open(context.Background(), "tmp/foo.txt")

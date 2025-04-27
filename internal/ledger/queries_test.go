@@ -1,46 +1,44 @@
-package ledger_test
+package ledger
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
 func TestAccountNames(t *testing.T) {
 	t.Run("returns an empty list for an empty journal.", func(t *testing.T) {
-		journal := &ledger.Journal{
-			Entries: []ledger.Entry{},
+		journal := &Journal{
+			Entries: []Entry{},
 		}
 
-		accountNames := ledger.AccountNames(journal)
+		accountNames := AccountNames(journal)
 
-		assert.Equal(t, []ledger.AccountName{}, accountNames)
+		assert.Equal(t, []AccountName{}, accountNames)
 	})
 
 	t.Run("returns a list of all account names and their prefixes in the journal.", func(t *testing.T) {
-		journal := &ledger.Journal{
-			Entries: []ledger.Entry{
-				&ledger.AccountDirective{
-					AccountName: &ledger.AccountName{
+		journal := &Journal{
+			Entries: []Entry{
+				&AccountDirective{
+					AccountName: &AccountName{
 						Segments: []string{"assets", "Cash", "Checking"},
 					},
 				},
-				&ledger.AccountDirective{
-					AccountName: &ledger.AccountName{
+				&AccountDirective{
+					AccountName: &AccountName{
 						Segments: []string{"revenue", "Salary"},
 					},
 				},
 			},
 		}
 
-		accountNames := ledger.AccountNames(journal)
+		accountNames := AccountNames(journal)
 
 		assert.ElementsMatch(
 			t,
-			[]ledger.AccountName{
+			[]AccountName{
 				{Segments: []string{"assets"}},
 				{Segments: []string{"assets", "Cash"}},
 				{Segments: []string{"assets", "Cash", "Checking"}},
@@ -54,15 +52,15 @@ func TestAccountNames(t *testing.T) {
 
 func TestFilterAccountNamesByPrefix(t *testing.T) {
 	t.Run("returns an empty list if no account names are given.", func(t *testing.T) {
-		accountNames := []ledger.AccountName{}
+		accountNames := []AccountName{}
 
-		matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, nil)
+		matchingAccountNames := FilterAccountNamesByPrefix(accountNames, nil)
 
-		assert.Equal(t, []ledger.AccountName{}, matchingAccountNames)
+		assert.Equal(t, []AccountName{}, matchingAccountNames)
 	})
 
 	t.Run("returns all 1-length account names if no query is given", func(t *testing.T) {
-		accountNames := []ledger.AccountName{
+		accountNames := []AccountName{
 			{Segments: []string{"assets"}},
 			{Segments: []string{"assets", "Cash"}},
 			{Segments: []string{"assets", "Cash", "Checking"}},
@@ -72,11 +70,11 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 			{Segments: []string{"revenue", "Salary"}},
 		}
 
-		matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, nil)
+		matchingAccountNames := FilterAccountNamesByPrefix(accountNames, nil)
 
 		assert.Equal(
 			t,
-			[]ledger.AccountName{
+			[]AccountName{
 				{Segments: []string{"assets"}},
 				{Segments: []string{"revenue"}},
 			},
@@ -85,7 +83,7 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 	})
 
 	t.Run("returns all account names matching the query that are at most one segment longer than the query.", func(t *testing.T) {
-		accountNames := []ledger.AccountName{
+		accountNames := []AccountName{
 			{Segments: []string{"assets"}},
 			{Segments: []string{"assets", "Cash"}},
 			{Segments: []string{"assets", "Cash", "Checking"}},
@@ -96,41 +94,41 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 		}
 
 		type testCase struct {
-			query                *ledger.AccountName
-			expectedAccountNames []ledger.AccountName
+			query                *AccountName
+			expectedAccountNames []AccountName
 		}
 
 		testCases := []testCase{
 			{
-				query: &ledger.AccountName{
+				query: &AccountName{
 					Segments: []string{"ass"},
 				},
-				expectedAccountNames: []ledger.AccountName{
+				expectedAccountNames: []AccountName{
 					{Segments: []string{"assets"}},
 					{Segments: []string{"assets", "Cash"}},
 					{Segments: []string{"assets", "Capital"}},
 				},
 			},
 			{
-				query: &ledger.AccountName{
+				query: &AccountName{
 					Segments: []string{"a", "C", "C"},
 				},
-				expectedAccountNames: []ledger.AccountName{
+				expectedAccountNames: []AccountName{
 					{Segments: []string{"assets", "Cash", "Checking"}},
 				},
 			},
 			{
-				query: &ledger.AccountName{
+				query: &AccountName{
 					Segments: []string{"a", "c", "c"},
 				},
-				expectedAccountNames: []ledger.AccountName{
+				expectedAccountNames: []AccountName{
 					{Segments: []string{"assets", "Cash", "Checking"}},
 				},
 			},
 		}
 		for i, testCase := range testCases {
 			t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) {
-				matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, testCase.query)
+				matchingAccountNames := FilterAccountNamesByPrefix(accountNames, testCase.query)
 
 				assert.Equal(t, testCase.expectedAccountNames, matchingAccountNames)
 			})
@@ -138,7 +136,7 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 	})
 
 	t.Run("returns all account names that contain segments starting with the given segments in order, but may include other segments in between.", func(t *testing.T) {
-		accountNames := []ledger.AccountName{
+		accountNames := []AccountName{
 			{Segments: []string{"assets"}},
 			{Segments: []string{"assets", "Cash"}},
 			{Segments: []string{"assets", "Cash", "Checking"}},
@@ -153,16 +151,16 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 		}
 
 		type testCase struct {
-			query                *ledger.AccountName
-			expectedAccountNames []ledger.AccountName
+			query                *AccountName
+			expectedAccountNames []AccountName
 		}
 
 		testCases := []testCase{
 			{
-				query: &ledger.AccountName{
+				query: &AccountName{
 					Segments: []string{"ass", "Var"},
 				},
-				expectedAccountNames: []ledger.AccountName{
+				expectedAccountNames: []AccountName{
 					{Segments: []string{"assets", "Cash", "Various"}},
 					{Segments: []string{"assets", "Cash", "Various", "Next"}},
 					{Segments: []string{"assets", "Capital", "Various"}},
@@ -171,7 +169,7 @@ func TestFilterAccountNamesByPrefix(t *testing.T) {
 		}
 		for i, testCase := range testCases {
 			t.Run(fmt.Sprintf("Test case %d", i), func(t *testing.T) {
-				matchingAccountNames := ledger.FilterAccountNamesByPrefix(accountNames, testCase.query)
+				matchingAccountNames := FilterAccountNamesByPrefix(accountNames, testCase.query)
 
 				assert.Equal(t, testCase.expectedAccountNames, matchingAccountNames)
 			})

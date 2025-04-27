@@ -1,24 +1,22 @@
-package ledger_test
+package ledger
 
 import (
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
-
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
-func pruneMetadataFromAst(ast *ledger.Journal) {
+func pruneMetadataFromAst(ast *Journal) {
 	for _, entry := range ast.Entries {
 		switch entry := entry.(type) {
-		case *ledger.AccountDirective:
+		case *AccountDirective:
 			entry.AccountName.Pos = participleLexer.Position{}
 			entry.AccountName.EndPos = participleLexer.Position{}
-		case *ledger.RealPosting:
+		case *RealPosting:
 			entry.AccountName.Pos = participleLexer.Position{}
 			entry.AccountName.EndPos = participleLexer.Position{}
-		case *ledger.VirtualPosting:
+		case *VirtualPosting:
 			entry.AccountName.Pos = participleLexer.Position{}
 			entry.AccountName.EndPos = participleLexer.Position{}
-		case *ledger.VirtualBalancedPosting:
+		case *VirtualBalancedPosting:
 			entry.AccountName.Pos = participleLexer.Position{}
 			entry.AccountName.EndPos = participleLexer.Position{}
 		}

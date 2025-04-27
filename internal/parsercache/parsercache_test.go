@@ -1,4 +1,4 @@
-package parsercache_test
+package parsercache
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
 	"github.com/yeldiRium/hledger-language-server/internal/ledger"
-	"github.com/yeldiRium/hledger-language-server/internal/parsercache"
 )
 
 func pruneMetadataFromAst(ast *ledger.Journal) {
@@ -36,7 +35,7 @@ func TestParserCache(t *testing.T) {
 	t.Run("NewCache", func(t *testing.T) {
 		t.Run("creates an empty cache.", func(t *testing.T) {
 			documentCache := documentcache.NewCache(fstest.MapFS{})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 			cacheSize := cache.Size()
 
 			assert.Equal(t, 0, cacheSize)
@@ -50,7 +49,7 @@ func TestParserCache(t *testing.T) {
 					Data: []byte("account assets:Cash:Checking\n"),
 				},
 			})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 
 			ast, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			pruneMetadataFromAst(ast)
@@ -73,7 +72,7 @@ func TestParserCache(t *testing.T) {
 					Data: []byte("account\n"),
 				},
 			})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 
 			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 
@@ -86,7 +85,7 @@ func TestParserCache(t *testing.T) {
 					Data: []byte("account assets:Cash:Checking\n"),
 				},
 			})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 
 			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			assert.NoError(t, err)
@@ -106,7 +105,7 @@ func TestParserCache(t *testing.T) {
 					Data: []byte("account\n"),
 				},
 			})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 
 			_, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			assert.Error(t, err)
@@ -125,7 +124,7 @@ func TestParserCache(t *testing.T) {
 					Data: []byte("account assets:Cash:Checking\n"),
 				},
 			})
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 
 			ast, err := cache.Parse(context.Background(), "tmp/foo/bar.journal")
 			pruneMetadataFromAst(ast)
@@ -171,7 +170,7 @@ func TestParserCache(t *testing.T) {
 				},
 			}
 			documentCache := documentcache.NewCache(fs)
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 			inputJournal := &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.IncludeDirective{
@@ -216,7 +215,7 @@ func TestParserCache(t *testing.T) {
 				},
 			}
 			documentCache := documentcache.NewCache(fs)
-			cache := parsercache.NewCache(documentCache)
+			cache := NewCache(documentCache)
 			inputJournal := &ledger.Journal{
 				Entries: []ledger.Entry{
 					&ledger.IncludeDirective{

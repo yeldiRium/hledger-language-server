@@ -1,4 +1,4 @@
-package ledger_test
+package ledger
 
 import (
 	"encoding/json"
@@ -7,15 +7,13 @@ import (
 
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
 )
 
 func TestJournalParser(t *testing.T) {
 	filename := "testFile"
 
-	runParser := func(testFileContent string) ([]participleLexer.Token, *ledger.Journal, error) {
-		lexer := ledger.NewJournalLexer()
+	runParser := func(testFileContent string) ([]participleLexer.Token, *Journal, error) {
+		lexer := NewJournalLexer()
 		lex, _ := lexer.LexString(filename, testFileContent)
 		tokens := make([]participleLexer.Token, 0)
 		token, err := lex.Next()
@@ -25,7 +23,7 @@ func TestJournalParser(t *testing.T) {
 		}
 		fmt.Printf("Tokens: %#v\n", tokens)
 
-		parser := ledger.NewJournalParser()
+		parser := NewJournalParser()
 		ast, err := parser.ParseString(filename, testFileContent)
 
 		jsonAst, _ := json.Marshal(ast)
@@ -38,7 +36,7 @@ func TestJournalParser(t *testing.T) {
 		t.Run("Parses a file containing only newlines.", func(t *testing.T) {
 			_, ast, err := runParser("\n\n\n")
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{}, ast)
+			assert.Equal(t, &Journal{}, ast)
 		})
 	})
 
@@ -48,9 +46,9 @@ func TestJournalParser(t *testing.T) {
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{
-				Entries: []ledger.Entry{
-					&ledger.IncludeDirective{
+			assert.Equal(t, &Journal{
+				Entries: []Entry{
+					&IncludeDirective{
 						IncludePath: "some/path.journal",
 					},
 				},
@@ -62,9 +60,9 @@ func TestJournalParser(t *testing.T) {
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{
-				Entries: []ledger.Entry{
-					&ledger.IncludeDirective{
+			assert.Equal(t, &Journal{
+				Entries: []Entry{
+					&IncludeDirective{
 						IncludePath: "some/path.journal",
 					},
 				},
@@ -84,10 +82,10 @@ func TestJournalParser(t *testing.T) {
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{
-				Entries: []ledger.Entry{
-					&ledger.AccountDirective{
-						AccountName: &ledger.AccountName{
+			assert.Equal(t, &Journal{
+				Entries: []Entry{
+					&AccountDirective{
+						AccountName: &AccountName{
 							Segments: []string{"assets", "Cash", "Checking"},
 						},
 					},
@@ -100,10 +98,10 @@ func TestJournalParser(t *testing.T) {
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{
-				Entries: []ledger.Entry{
-					&ledger.AccountDirective{
-						AccountName: &ledger.AccountName{
+			assert.Equal(t, &Journal{
+				Entries: []Entry{
+					&AccountDirective{
+						AccountName: &AccountName{
 							Segments: []string{"assets", "Cash", "Che cking", "Spe-ci_al"},
 						},
 					},
@@ -116,10 +114,10 @@ func TestJournalParser(t *testing.T) {
 			pruneMetadataFromAst(ast)
 
 			assert.NoError(t, err)
-			assert.Equal(t, &ledger.Journal{
-				Entries: []ledger.Entry{
-					&ledger.AccountDirective{
-						AccountName: &ledger.AccountName{
+			assert.Equal(t, &Journal{
+				Entries: []Entry{
+					&AccountDirective{
+						AccountName: &AccountName{
 							Segments: []string{"assets", "Cash"},
 						},
 					},
@@ -169,54 +167,54 @@ commodity EUR
 
 			assert.NoError(t, err)
 			assert.Equal(t,
-				&ledger.Journal{
-					Entries: []ledger.Entry{
-						&ledger.IncludeDirective{
+				&Journal{
+					Entries: []Entry{
+						&IncludeDirective{
 							IncludePath: "someLong/Pathof/things.journal",
 						},
-						&ledger.IncludeDirective{
+						&IncludeDirective{
 							IncludePath: "also/there-are-no/inlinecomments/after.includes  ; this is part of the path",
 						},
-						&ledger.AccountDirective{
-							AccountName: &ledger.AccountName{
+						&AccountDirective{
+							AccountName: &AccountName{
 								Segments: []string{"assets", "Cash", "Checking"},
 							},
 						},
-						&ledger.AccountDirective{
-							AccountName: &ledger.AccountName{
+						&AccountDirective{
+							AccountName: &AccountName{
 								Segments: []string{"expenses", "Gro ce", "ries"},
 							},
 						},
-						&ledger.RealPosting{
+						&RealPosting{
 							PostingStatus: "",
-							AccountName: &ledger.AccountName{
+							AccountName: &AccountName{
 								Segments: []string{"expenses", "Groceries"},
 							},
 							Amount: "1,234.56 €",
 						},
-						&ledger.RealPosting{
+						&RealPosting{
 							PostingStatus: "!",
-							AccountName: &ledger.AccountName{
+							AccountName: &AccountName{
 								Segments: []string{"assets", "Cash", "Checking"},
 							},
 							Amount: "-1,234.56 €",
 						},
-						&ledger.VirtualPosting{
+						&VirtualPosting{
 							PostingStatus: "",
-							AccountName: &ledger.AccountName{
+							AccountName: &AccountName{
 								Segments: []string{"virtual", "posting"},
 							},
 							Amount: "300 €",
 						},
-						&ledger.VirtualBalancedPosting{
+						&VirtualBalancedPosting{
 							PostingStatus: "",
-							AccountName: &ledger.AccountName{
+							AccountName: &AccountName{
 								Segments: []string{"balanced", "virtual", "posting"},
 							},
 							Amount: "= 15 €",
 						},
-						&ledger.RealPosting{
-							AccountName: &ledger.AccountName{
+						&RealPosting{
+							AccountName: &AccountName{
 								Segments: []string{"expenses", "Groceries"},
 							},
 							Amount: "",
@@ -245,17 +243,17 @@ commodity EUR
 func TestAccountName(t *testing.T) {
 	t.Run("Prefixes", func(t *testing.T) {
 		t.Run("returns an empty list if the account name has no segments.", func(t *testing.T) {
-			accountName := &ledger.AccountName{
+			accountName := &AccountName{
 				Segments: []string{},
 			}
 
 			prefixes := accountName.Prefixes()
 
-			assert.Equal(t, []ledger.AccountName{}, prefixes)
+			assert.Equal(t, []AccountName{}, prefixes)
 		})
 
 		t.Run("returns all segment prefixes of the account name.", func(t *testing.T) {
-			accountName := &ledger.AccountName{
+			accountName := &AccountName{
 				Segments: []string{"assets", "Cash", "Checking", "Whatever", "another layer"},
 			}
 
@@ -263,7 +261,7 @@ func TestAccountName(t *testing.T) {
 
 			assert.Equal(
 				t,
-				[]ledger.AccountName{
+				[]AccountName{
 					{Segments: []string{"assets"}},
 					{Segments: []string{"assets", "Cash"}},
 					{Segments: []string{"assets", "Cash", "Checking"}},
