@@ -132,6 +132,23 @@ func NewLexer(
 	}
 }
 
+// PrepareLexer prepares a lexer without starting it. This is intended for
+// testing and should probably not be used otherwise.
+func PrepareLexer(input string, tokenNames []string, rootState StateFn, bufferSize uint) (lexer *Lexer, filename string) {
+	filename = "testFile"
+	definition := NewLexerDefinition(rootState, tokenNames)
+	lexer = NewLexer(
+		filename,
+		definition,
+		input,
+		participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
+		make(chan participleLexer.Token, bufferSize),
+	)
+
+	return lexer, filename
+}
+
 func (lexer *Lexer) run(initialState StateFn) {
 	for state := initialState; state != nil; {
 		state = state(lexer)

@@ -102,31 +102,16 @@ func TestLexer(t *testing.T) {
 	})
 
 	t.Run("Lexer", func(t *testing.T) {
-		prepareLexer := func(input string, tokenNames []string, rootState StateFn) (lexer *Lexer, filename string) {
-			filename = "testFile"
-			definition := NewLexerDefinition(rootState, tokenNames)
-			lexer = NewLexer(
-				filename,
-				definition,
-				input,
-				participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-				participleLexer.Position{Filename: filename, Line: 1, Column: 1, Offset: 0},
-				make(chan participleLexer.Token),
-			)
-
-			return lexer, filename
-		}
-
 		t.Run("Symbol", func(t *testing.T) {
 			t.Run("returns a TokenType for the given token name.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{"foo", "bar"}, nil)
+				lexer, _ := PrepareLexer("test input", []string{"foo", "bar"}, nil, 0)
 
 				symbol := lexer.Symbol("foo")
 				assert.Equal(t, participleLexer.TokenType(3), symbol)
 			})
 
 			t.Run("panics if the token name is unknown.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{"foo", "bar"}, nil)
+				lexer, _ := PrepareLexer("test input", []string{"foo", "bar"}, nil, 0)
 
 				assert.Panics(t, func() {
 					lexer.Symbol("unknown")
@@ -136,7 +121,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("NextRune", func(t *testing.T) {
 			t.Run("returns the next rune in the input and moves the position forward by one.", func(t *testing.T) {
-				lexer, filename := prepareLexer("foo", []string{}, nil)
+				lexer, filename := PrepareLexer("foo", []string{}, nil, 0)
 
 				r, _ := lexer.NextRune()
 				assert.Equal(t, 'f', r)
@@ -144,7 +129,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that moves the position back to before the rune.", func(t *testing.T) {
-				lexer, filename := prepareLexer("foo", []string{}, nil)
+				lexer, filename := PrepareLexer("foo", []string{}, nil, 0)
 
 				_, backup := lexer.NextRune()
 				assert.Equal(t, participleLexer.Position{Filename: filename, Line: 1, Column: 2, Offset: 1}, lexer.Pos())
@@ -155,7 +140,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Peek", func(t *testing.T) {
 			t.Run("returns the next rune in the input without moving the position.", func(t *testing.T) {
-				lexer, filename := prepareLexer("foo", []string{}, nil)
+				lexer, filename := PrepareLexer("foo", []string{}, nil, 0)
 
 				r := lexer.Peek()
 				assert.Equal(t, 'f', r)
@@ -165,7 +150,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Emit", func(t *testing.T) {
 			t.Run("emits the lexed string between start and pos with the given token type, then starts a new token by setting start to pos.", func(t *testing.T) {
-				lexer, filename := prepareLexer("foo", []string{"String"}, nil)
+				lexer, filename := PrepareLexer("foo", []string{"String"}, nil, 0)
 
 				ok, _, err := lexer.AcceptString("foo")
 				assert.NoError(t, err)
@@ -182,7 +167,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Ignore", func(t *testing.T) {
 			t.Run("ignores the lexed string between start and pos and starts a new token by setting start to pos.", func(t *testing.T) {
-				lexer, filename := prepareLexer("foo", []string{"String"}, nil)
+				lexer, filename := PrepareLexer("foo", []string{"String"}, nil, 0)
 
 				ok, _, err := lexer.AcceptString("foo")
 				assert.NoError(t, err)
@@ -196,7 +181,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Errorf", func(t *testing.T) {
 			t.Run("emits an error token with the given message.", func(t *testing.T) {
-				lexer, _ := prepareLexer("foo", []string{"String"}, nil)
+				lexer, _ := PrepareLexer("foo", []string{"String"}, nil, 0)
 
 				go func() {
 					lexer.Errorf("something went wrong")
@@ -209,7 +194,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("Accept", func(t *testing.T) {
 			t.Run("accepts a single character, returns true and advances the position.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok, _, err := lexer.Accept("t")
 				assert.NoError(t, err)
@@ -218,7 +203,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns false and stays at position if the next character does not match.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok, _, err := lexer.Accept("x")
 				assert.NoError(t, err)
@@ -227,7 +212,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the accept call.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				_, backup, err := lexer.Accept("t")
 				assert.NoError(t, err)
@@ -237,7 +222,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns an error when encountering EOF.", func(t *testing.T) {
-				lexer, _ := prepareLexer("", []string{}, nil)
+				lexer, _ := PrepareLexer("", []string{}, nil, 0)
 
 				_, _, err := lexer.Accept("t")
 				assert.ErrorIs(t, err, ErrEof)
@@ -246,7 +231,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AcceptFn", func(t *testing.T) {
 			t.Run("accepts a single character for which the callback returns true.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0", []string{}, nil)
+				lexer, filename := PrepareLexer("0", []string{}, nil, 0)
 
 				ok, _, err := lexer.AcceptFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -257,7 +242,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("does not accept a character for which the callback returns false.", func(t *testing.T) {
-				lexer, filename := prepareLexer("7", []string{}, nil)
+				lexer, filename := PrepareLexer("7", []string{}, nil, 0)
 
 				ok, _, err := lexer.AcceptFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -270,7 +255,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AcceptRun", func(t *testing.T) {
 			t.Run("accepts any number of characters from the valid set and advances the position.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0000001111", []string{}, nil)
+				lexer, filename := PrepareLexer("0000001111", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRun("0")
 				assert.NoError(t, err)
@@ -279,7 +264,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("does nothing if the next rune is not in the set of valid characters.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0000001111", []string{}, nil)
+				lexer, filename := PrepareLexer("0000001111", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRun("5")
 				assert.NoError(t, err)
@@ -288,7 +273,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the acceptRun call.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0000001111", []string{}, nil)
+				lexer, filename := PrepareLexer("0000001111", []string{}, nil, 0)
 
 				didConsumeRunes, backup, err := lexer.AcceptRun("0")
 				assert.NoError(t, err)
@@ -299,7 +284,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("ends the run and does not return an error when encountering EOF.", func(t *testing.T) {
-				lexer, _ := prepareLexer("", []string{}, nil)
+				lexer, _ := PrepareLexer("", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRun("0")
 				assert.NoError(t, err)
@@ -309,7 +294,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AcceptFnRun", func(t *testing.T) {
 			t.Run("accepts a run of characters for which the callback returns true.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0123456789", []string{}, nil)
+				lexer, filename := PrepareLexer("0123456789", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -320,7 +305,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("does nothing if the next rune does not fulfil the predicate.", func(t *testing.T) {
-				lexer, filename := prepareLexer("555", []string{}, nil)
+				lexer, filename := PrepareLexer("555", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -331,7 +316,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the acceptRunFn call.", func(t *testing.T) {
-				lexer, filename := prepareLexer("0123456789", []string{}, nil)
+				lexer, filename := PrepareLexer("0123456789", []string{}, nil, 0)
 
 				didConsumeRunes, backup, err := lexer.AcceptRunFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -344,7 +329,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("ends the run and does not return an error when encountering EOF.", func(t *testing.T) {
-				lexer, _ := prepareLexer("", []string{}, nil)
+				lexer, _ := PrepareLexer("", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptRunFn(func(r rune) bool {
 					return strings.ContainsRune("01234", r)
@@ -356,7 +341,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AcceptString", func(t *testing.T) {
 			t.Run("accepts the full given string and advances the position.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok, _, err := lexer.AcceptString("test")
 				assert.NoError(t, err)
@@ -365,7 +350,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns false and stays at position if the next characters do not match.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok, _, err := lexer.AcceptString("foo")
 				assert.NoError(t, err)
@@ -374,7 +359,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the acceptString call.", func(t *testing.T) {
-				lexer, filename := prepareLexer("test input", []string{}, nil)
+				lexer, filename := PrepareLexer("test input", []string{}, nil, 0)
 
 				_, backup, err := lexer.AcceptString("test")
 				assert.NoError(t, err)
@@ -384,7 +369,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns an error when encountering EOF.", func(t *testing.T) {
-				lexer, _ := prepareLexer("te", []string{}, nil)
+				lexer, _ := PrepareLexer("te", []string{}, nil, 0)
 
 				_, _, err := lexer.AcceptString("test")
 				assert.ErrorIs(t, err, ErrEof)
@@ -393,7 +378,7 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AcceptUntil", func(t *testing.T) {
 			t.Run("accepts any number of characters until an invalid character is encountered and advances the position.", func(t *testing.T) {
-				lexer, filename := prepareLexer("ngqxflguiasordsoxl0xeflq", []string{}, nil)
+				lexer, filename := PrepareLexer("ngqxflguiasordsoxl0xeflq", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptUntil("0")
 				assert.NoError(t, err)
@@ -402,7 +387,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("does nothing if the next rune is an invalid character.", func(t *testing.T) {
-				lexer, filename := prepareLexer("5000001111", []string{}, nil)
+				lexer, filename := PrepareLexer("5000001111", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptUntil("5")
 				assert.NoError(t, err)
@@ -411,7 +396,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns a backup function that rewinds the position to before the acceptUntil call.", func(t *testing.T) {
-				lexer, filename := prepareLexer("ngqxflguiasordsoxl0xeflq", []string{}, nil)
+				lexer, filename := PrepareLexer("ngqxflguiasordsoxl0xeflq", []string{}, nil, 0)
 
 				didConsumeRunes, backup, err := lexer.AcceptUntil("0")
 				assert.NoError(t, err)
@@ -422,7 +407,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("ends the run and does not return an error when encountering EOF.", func(t *testing.T) {
-				lexer, filename := prepareLexer("nlgeqxgenui", []string{}, nil)
+				lexer, filename := PrepareLexer("nlgeqxgenui", []string{}, nil, 0)
 
 				didConsumeRunes, _, err := lexer.AcceptUntil("0")
 				assert.NoError(t, err)
@@ -433,14 +418,14 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AssertAfter", func(t *testing.T) {
 			t.Run("returns false if the current position is at the beginning of the input.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{}, nil)
+				lexer, _ := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok := lexer.AssertAfter("abc")
 				assert.False(t, ok)
 			})
 
 			t.Run("returns true if the previous rune in the input belongs to the valid set.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{}, nil)
+				lexer, _ := PrepareLexer("test input", []string{}, nil, 0)
 
 				_, _, _ = lexer.Accept("t")
 
@@ -449,7 +434,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("returns false if the previous rune in the input does not belong to the valid set.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{}, nil)
+				lexer, _ := PrepareLexer("test input", []string{}, nil, 0)
 
 				_, _, _ = lexer.Accept("t")
 
@@ -458,7 +443,7 @@ func TestLexer(t *testing.T) {
 			})
 
 			t.Run("does not fail when the previous rune is multiple bytes long.", func(t *testing.T) {
-				lexer, _ := prepareLexer("€ ", []string{}, nil)
+				lexer, _ := PrepareLexer("€ ", []string{}, nil, 0)
 
 				ok, _, err := lexer.Accept("€")
 				assert.NoError(t, err)
@@ -471,14 +456,14 @@ func TestLexer(t *testing.T) {
 
 		t.Run("AssertAtStart", func(t *testing.T) {
 			t.Run("returns true if the current position is at the beginning of the input.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{}, nil)
+				lexer, _ := PrepareLexer("test input", []string{}, nil, 0)
 
 				ok := lexer.AssertAtStart()
 				assert.True(t, ok)
 			})
 
 			t.Run("returns false if the current position is not at the beginning of the input.", func(t *testing.T) {
-				lexer, _ := prepareLexer("test input", []string{}, nil)
+				lexer, _ := PrepareLexer("test input", []string{}, nil, 0)
 
 				_, _, _ = lexer.Accept("t")
 

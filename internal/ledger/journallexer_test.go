@@ -11,8 +11,6 @@ import (
 )
 
 func TestJournalLexer(t *testing.T) {
-	fileName := "testFile"
-
 	t.Run("Miscellaneous", func(t *testing.T) {
 		t.Run("Succeeds on an empty input.", func(t *testing.T) {
 			lextesting.AssertLexer(
@@ -66,20 +64,14 @@ func TestJournalLexer(t *testing.T) {
 	t.Run("Helpers", func(t *testing.T) {
 		t.Run("AcceptInlineCommentIndicator", func(t *testing.T) {
 			t.Run("accepts an inline comment indicator using a semicolon and emits a token.", func(t *testing.T) {
-				lexerDefinition := lexing.NewLexerDefinition(
-					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+				lexer, fileName := lexing.PrepareLexer(
+					"  ; foo",
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
-				)
-				lexer := lexing.NewLexer(
-					fileName,
-					lexerDefinition,
-					"  ; foo",
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					make(chan participleLexer.Token, 1),
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+					1,
 				)
 
 				ok, _, err := AcceptInlineCommentIndicator(lexer)
@@ -89,20 +81,14 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("accepts an inline comment indicator using a hash.", func(t *testing.T) {
-				lexerDefinition := lexing.NewLexerDefinition(
-					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+				lexer, fileName := lexing.PrepareLexer(
+					"  # foo",
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
-				)
-				lexer := lexing.NewLexer(
-					fileName,
-					lexerDefinition,
-					"  # foo",
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					make(chan participleLexer.Token, 1),
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+					1,
 				)
 
 				ok, _, err := AcceptInlineCommentIndicator(lexer)
@@ -112,20 +98,14 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("does not accept things not starting with spaces.", func(t *testing.T) {
-				lexerDefinition := lexing.NewLexerDefinition(
-					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+				lexer, fileName := lexing.PrepareLexer(
+					"foo",
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
-				)
-				lexer := lexing.NewLexer(
-					fileName,
-					lexerDefinition,
-					"foo",
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					make(chan participleLexer.Token, 1),
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+					1,
 				)
 
 				ok, _, err := AcceptInlineCommentIndicator(lexer)
@@ -135,20 +115,14 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("does not accept inline comments starting with anything else.", func(t *testing.T) {
-				lexerDefinition := lexing.NewLexerDefinition(
-					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+				lexer, fileName := lexing.PrepareLexer(
+					"  foo",
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
-				)
-				lexer := lexing.NewLexer(
-					fileName,
-					lexerDefinition,
-					"  foo",
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					make(chan participleLexer.Token, 1),
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+					1,
 				)
 
 				ok, _, err := AcceptInlineCommentIndicator(lexer)
@@ -158,20 +132,14 @@ func TestJournalLexer(t *testing.T) {
 			})
 
 			t.Run("returns an error upon encountering EOF.", func(t *testing.T) {
-				lexerDefinition := lexing.NewLexerDefinition(
-					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+				lexer, _ := lexing.PrepareLexer(
+					" ",
 					[]string{
 						"Char",
 						"InlineCommentIndicator",
 					},
-				)
-				lexer := lexing.NewLexer(
-					fileName,
-					lexerDefinition,
-					" ",
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					participleLexer.Position{Filename: fileName, Line: 1, Column: 1, Offset: 0},
-					make(chan participleLexer.Token, 1),
+					func(lexer *lexing.Lexer) lexing.StateFn { return nil },
+					1,
 				)
 
 				_, _, err := AcceptInlineCommentIndicator(lexer)
