@@ -154,7 +154,7 @@ func CompareTokenPositions() testLexerOption {
 	}
 }
 
-func AssertLexer(t *testing.T, lexerDefinition *lexing.LexerDefinition, opts ...testLexerOption) {
+func AssertLexer(t *testing.T, lexerDefinition *lexing.LexerDefinition, opts ...testLexerOption) bool {
 	config := testLexerConfig{
 		lexerDefinition:                      lexerDefinition,
 		input:                                "",
@@ -171,7 +171,7 @@ func AssertLexer(t *testing.T, lexerDefinition *lexing.LexerDefinition, opts ...
 		panic("can not combine includeSymbolNames and onlyIncludeExplicitlyExpectedSymbols. to explicitly include symbols, use IncludeUnexpectedSymbols")
 	}
 
-	runAssertLexer(t, config)
+	return runAssertLexer(t, config)
 }
 
 func runAssertLexer(t *testing.T, config testLexerConfig) bool {
