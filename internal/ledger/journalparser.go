@@ -64,7 +64,7 @@ func (accountName AccountName) Equals(otherAccountName AccountName) bool {
 }
 
 type RealPosting struct {
-	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	PostingStatus string       `parser:"Indent (@PostingStatusIndicator ' ')?"`
 	AccountName   *AccountName `parser:"@@"`
 	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
@@ -72,7 +72,7 @@ type RealPosting struct {
 func (*RealPosting) value() {}
 
 type VirtualPosting struct {
-	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	PostingStatus string       `parser:"Indent (@PostingStatusIndicator ' ')?"`
 	AccountName   *AccountName `parser:"'(' @@ ')'"`
 	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
@@ -80,7 +80,7 @@ type VirtualPosting struct {
 func (*VirtualPosting) value() {}
 
 type VirtualBalancedPosting struct {
-	PostingStatus string       `parser:"Indent (@('*' | '!') ' ')?"`
+	PostingStatus string       `parser:"Indent (@PostingStatusIndicator ' ')?"`
 	AccountName   *AccountName `parser:"'[' @@ ']'"`
 	Amount        string       `parser:"(Whitespace @Amount)? (InlineCommentIndicator Garbage)? Newline"`
 }
