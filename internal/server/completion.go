@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
+	"github.com/yeldirium/hledger-language-server/internal/ledger"
 )
 
 func registerCompletionCapabilities(capabilities *protocol.ServerCapabilities) {

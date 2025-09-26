@@ -8,8 +8,8 @@ import (
 	"github.com/alecthomas/assert/v2"
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 
-	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
+	"github.com/yeldirium/hledger-language-server/internal/documentcache"
+	"github.com/yeldirium/hledger-language-server/internal/ledger"
 )
 
 func pruneMetadataFromAst(ast *ledger.Journal) {

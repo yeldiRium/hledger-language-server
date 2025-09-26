@@ -15,7 +15,7 @@ import (
 	t "go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
-	"github.com/yeldiRium/hledger-language-server/internal/version"
+	"github.com/yeldirium/hledger-language-server/internal/version"
 )
 
 type Telemetry struct {
