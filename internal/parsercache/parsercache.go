@@ -8,9 +8,9 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/yeldiRium/hledger-language-server/internal/documentcache"
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
-	"github.com/yeldiRium/hledger-language-server/internal/telemetry"
+	"github.com/yeldirium/hledger-language-server/internal/documentcache"
+	"github.com/yeldirium/hledger-language-server/internal/ledger"
+	"github.com/yeldirium/hledger-language-server/internal/telemetry"
 )
 
 type ParsingResult struct {

@@ -6,8 +6,8 @@ import (
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/yeldiRium/hledger-language-server/internal/lexing"
-	lextesting "github.com/yeldiRium/hledger-language-server/internal/lexing/testing"
+	"github.com/yeldirium/hledger-language-server/internal/lexing"
+	lextesting "github.com/yeldirium/hledger-language-server/internal/lexing/testing"
 )
 
 func TestJournalLexer(t *testing.T) {

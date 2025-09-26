@@ -7,7 +7,7 @@ import (
 	participleLexer "github.com/alecthomas/participle/v2/lexer"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/yeldiRium/hledger-language-server/internal/lexing"
+	"github.com/yeldirium/hledger-language-server/internal/lexing"
 )
 
 type MiniToken struct {

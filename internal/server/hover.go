@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/yeldiRium/hledger-language-server/internal/ledger"
+	"github.com/yeldirium/hledger-language-server/internal/ledger"
 )
 
 func registerHoverCapabilities(serverCapabilities *protocol.ServerCapabilities) {
