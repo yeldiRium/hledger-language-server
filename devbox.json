@@ -16,7 +16,7 @@
       "doc":      "xdg-open http://localhost:6060; go tool godoc -http localhost:6060",
       "lint":     "golangci-lint run ./...",
       "lint:fix": "golangci-lint run --fix ./...",
-      "test":     "go test ./...",
+      "test":     "go tool gotestsum",
 
       "make:diagrams": [
         "mkdir -p internal/ledger/diagrams",
