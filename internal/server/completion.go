@@ -8,7 +8,6 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/yeldiRium/hledger-language-server/internal/ledger"
@@ -42,7 +41,6 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 	if err != nil {
 		err = fmt.Errorf("failed to open/parse journal: %w", err)
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
@@ -50,7 +48,6 @@ func (server server) Completion(ctx context.Context, params *protocol.Completion
 	if err != nil {
 		err = fmt.Errorf("failed to resolve includes: %w", err)
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
